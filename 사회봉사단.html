@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHU Volunteer 2026 - 사회봉사단 관리 시스템</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Noto Sans KR',sans-serif; background:#f0f2f5; color:#1a1a2e; }
+
+/* Sidebar */
+.sidebar {
+  position:fixed; left:0; top:0; width:260px; height:100vh;
+  background:linear-gradient(180deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+  color:#fff; padding:20px 0; z-index:100; overflow-y:auto;
+}
+.sidebar-header { padding:20px 24px 30px; border-bottom:1px solid rgba(255,255,255,0.1); }
+.sidebar-header h1 { font-size:18px; font-weight:700; color:#e94560; }
+.sidebar-header p { font-size:12px; color:rgba(255,255,255,0.6); margin-top:4px; }
+.sidebar-nav { padding:16px 0; }
+.nav-item {
+  display:flex; align-items:center; padding:12px 24px; cursor:pointer;
+  color:rgba(255,255,255,0.7); font-size:14px; transition:all 0.2s;
+  border-left:3px solid transparent;
+}
+.nav-item:hover { background:rgba(255,255,255,0.05); color:#fff; }
+.nav-item.active { background:rgba(233,69,96,0.15); color:#e94560; border-left-color:#e94560; }
+.nav-item .icon { width:20px; margin-right:12px; text-align:center; font-size:16px; }
+.sidebar-footer { position:absolute; bottom:0; left:0; right:0; padding:16px 24px; border-top:1px solid rgba(255,255,255,0.1); }
+.sidebar-footer p { font-size:11px; color:rgba(255,255,255,0.4); }
+
+/* Main */
+.main { margin-left:260px; padding:24px 32px; min-height:100vh; }
+.page-header { margin-bottom:24px; }
+.page-header h2 { font-size:24px; font-weight:700; color:#1a1a2e; }
+.page-header p { font-size:13px; color:#666; margin-top:4px; }
+
+/* Cards */
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-bottom:24px; }
+.stat-card {
+  background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  position:relative; overflow:hidden;
+}
+.stat-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+}
+.stat-card.blue::before { background:#3b82f6; }
+.stat-card.red::before { background:#e94560; }
+.stat-card.green::before { background:#10b981; }
+.stat-card.purple::before { background:#8b5cf6; }
+.stat-card.orange::before { background:#f59e0b; }
+.stat-label { font-size:12px; color:#888; font-weight:500; }
+.stat-value { font-size:28px; font-weight:700; margin:8px 0 4px; }
+.stat-sub { font-size:11px; color:#aaa; }
+
+/* Panels */
+.panel {
+  background:#fff; border-radius:12px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  margin-bottom:20px;
+}
+.panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.panel-title { font-size:16px; font-weight:600; }
+.panel-badge {
+  display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:500;
+}
+.badge-blue { background:#eff6ff; color:#3b82f6; }
+.badge-green { background:#ecfdf5; color:#10b981; }
+.badge-red { background:#fef2f2; color:#ef4444; }
+.badge-orange { background:#fffbeb; color:#f59e0b; }
+.badge-purple { background:#f5f3ff; color:#8b5cf6; }
+
+/* Table */
+table { width:100%; border-collapse:collapse; }
+th { background:#f8fafc; padding:10px 12px; font-size:12px; color:#64748b; font-weight:600; text-align:left; border-bottom:2px solid #e2e8f0; }
+td { padding:10px 12px; font-size:13px; border-bottom:1px solid #f1f5f9; }
+tr:hover td { background:#f8fafc; }
+
+/* Status */
+.status {
+  display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:500;
+}
+.status-pending { background:#fef3c7; color:#d97706; }
+.status-progress { background:#dbeafe; color:#2563eb; }
+.status-done { background:#d1fae5; color:#059669; }
+.status-upcoming { background:#f3e8ff; color:#7c3aed; }
+
+/* Tabs */
+.tab-bar { display:flex; gap:4px; margin-bottom:20px; background:#f1f5f9; border-radius:8px; padding:4px; }
+.tab-btn {
+  padding:8px 16px; border:none; background:transparent; border-radius:6px;
+  font-size:13px; cursor:pointer; color:#64748b; font-family:inherit; font-weight:500;
+}
+.tab-btn.active { background:#fff; color:#1a1a2e; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+
+/* Grid layouts */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }
+
+/* Timeline */
+.timeline-item { display:flex; gap:16px; padding:12px 0; border-bottom:1px solid #f1f5f9; }
+.timeline-item:last-child { border-bottom:none; }
+.timeline-date { min-width:100px; font-size:12px; color:#64748b; font-weight:500; padding-top:2px; }
+.timeline-content h4 { font-size:14px; font-weight:600; margin-bottom:4px; }
+.timeline-content p { font-size:12px; color:#888; line-height:1.6; }
+.timeline-dot { width:10px; height:10px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+
+/* Progress bar */
+.progress-bar { background:#f1f5f9; border-radius:20px; height:8px; overflow:hidden; margin:8px 0; }
+.progress-fill { height:100%; border-radius:20px; transition:width 0.6s ease; }
+.progress-blue .progress-fill { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.progress-green .progress-fill { background:linear-gradient(90deg,#10b981,#34d399); }
+.progress-red .progress-fill { background:linear-gradient(90deg,#e94560,#f87171); }
+.progress-purple .progress-fill { background:linear-gradient(90deg,#8b5cf6,#a78bfa); }
+
+/* KPI Gauge */
+.kpi-card { text-align:center; padding:24px; }
+.kpi-card canvas { max-width:180px; margin:0 auto; }
+.kpi-value { font-size:32px; font-weight:700; margin:12px 0 4px; }
+.kpi-target { font-size:12px; color:#888; }
+.kpi-label { font-size:14px; font-weight:600; margin-bottom:12px; }
+
+/* Budget Item */
+.budget-item { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #f1f5f9; }
+.budget-item:last-child { border-bottom:none; }
+.budget-name { font-size:13px; font-weight:500; }
+.budget-amount { font-size:14px; font-weight:600; }
+
+/* Section hide/show */
+.section { display:none; }
+.section.active { display:block; }
+
+/* Search box */
+.search-box {
+  padding:8px 14px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px;
+  font-family:inherit; width:280px; outline:none; transition:border 0.2s;
+}
+.search-box:focus { border-color:#3b82f6; }
+
+/* Buttons */
+.btn {
+  padding:8px 16px; border:none; border-radius:8px; font-size:13px;
+  font-family:inherit; cursor:pointer; font-weight:500; transition:all 0.2s;
+}
+.btn-primary { background:#e94560; color:#fff; }
+.btn-primary:hover { background:#d63d56; }
+.btn-outline { background:#fff; color:#64748b; border:1px solid #e2e8f0; }
+.btn-outline:hover { border-color:#3b82f6; color:#3b82f6; }
+
+/* Checklist */
+.check-item { display:flex; align-items:center; gap:10px; padding:8px 0; }
+.check-item input[type=checkbox] { width:16px; height:16px; accent-color:#e94560; }
+.check-item label { font-size:13px; cursor:pointer; }
+.check-item.done label { text-decoration:line-through; color:#aaa; }
+
+/* Responsive */
+@media (max-width:1024px) {
+  .sidebar { width:200px; }
+  .main { margin-left:200px; }
+  .grid-2, .grid-3 { grid-template-columns:1fr; }
+}
+@media (max-width:768px) {
+  .sidebar { display:none; }
+  .main { margin-left:0; }
+  .stats-grid { grid-template-columns:1fr 1fr; }
+}
+
+/* Print */
+@media print {
+  .sidebar { display:none; }
+  .main { margin-left:0; }
+}
+
+/* Animations */
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.section.active { animation: fadeIn 0.3s ease; }
+
+/* Participant card */
+.participant-card {
+  background:#f8fafc; border-radius:8px; padding:12px 16px; display:flex;
+  justify-content:space-between; align-items:center; margin-bottom:8px;
+}
+.participant-info { font-size:13px; }
+.participant-info .name { font-weight:600; }
+.participant-info .dept { color:#888; font-size:12px; }
+
+/* Modal */
+.modal-overlay {
+  display:none; position:fixed; top:0; left:0; right:0; bottom:0;
+  background:rgba(0,0,0,0.4); z-index:200; justify-content:center; align-items:center;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:#fff; border-radius:16px; padding:32px; max-width:500px; width:90%;
+  box-shadow:0 20px 60px rgba(0,0,0,0.2);
+}
+.modal h3 { font-size:18px; margin-bottom:16px; }
+.modal input, .modal select, .modal textarea {
+  width:100%; padding:10px 12px; border:1px solid #e2e8f0; border-radius:8px;
+  font-family:inherit; font-size:13px; margin-bottom:12px; outline:none;
+}
+.modal textarea { height:80px; resize:vertical; }
+.modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1>SHU VOLUNTEER</h1>
+    <p>삼육보건대학교 사회봉사단</p>
+    <p style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.4)">부단장 김경목</p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" onclick="showSection('dashboard')">
+      <span class="icon">📊</span> 대시보드
+    </div>
+    <div class="nav-item" onclick="showSection('schedule')">
+      <span class="icon">📅</span> 일정 관리
+    </div>
+    <div class="nav-item" onclick="showSection('budget')">
+      <span class="icon">💰</span> 예산 관리
+    </div>
+    <div class="nav-item" onclick="showSection('kpi')">
+      <span class="icon">📈</span> KPI 모니터링
+    </div>
+    <div class="nav-item" onclick="showSection('programs')">
+      <span class="icon">🌍</span> 사업 관리
+    </div>
+    <div class="nav-item" onclick="showSection('participants')">
+      <span class="icon">👥</span> 참여자 관리
+    </div>
+    <div class="nav-item" onclick="showSection('checklist')">
+      <span class="icon">✅</span> 업무 체크리스트
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <p>2026학년도 1학기</p>
+    <p>v1.0 | 사회봉사단 관리 시스템</p>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<main class="main">
+
+<!-- ==================== 대시보드 ==================== -->
+<div class="section active" id="sec-dashboard">
+  <div class="page-header">
+    <h2>대시보드</h2>
+    <p>2026학년도 1학기 SHU VOLUNTEER 프로그램 운영 현황</p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card blue">
+      <div class="stat-label">총 예산</div>
+      <div class="stat-value">2.16억</div>
+      <div class="stat-sub">해외 2.065억 + 국내 0.1억</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">진행 상태</div>
+      <div class="stat-value" id="dash-status">준비중</div>
+      <div class="stat-sub">2026-1학기 프로그램</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">KPI 평균 목표</div>
+      <div class="stat-value">97.3%</div>
+      <div class="stat-sub">3개 지표 평균 (98+96+96)/3</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-label">주요 사업</div>
+      <div class="stat-value">4건</div>
+      <div class="stat-sub">해외봉사 / 국내봉사 / 동계지원 / 수기공모전</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-label">오늘 날짜</div>
+      <div class="stat-value" id="dash-today"></div>
+      <div class="stat-sub" id="dash-dday"></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">다음 일정</span>
+        <span class="panel-badge badge-blue">1학기</span>
+      </div>
+      <div id="upcoming-schedule"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">사업별 진행 현황</span>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+          <span>해외봉사 (SHU-Volunteer)</span>
+          <span id="prog-overseas-pct">0%</span>
+        </div>
+        <div class="progress-bar progress-blue"><div class="progress-fill" id="prog-overseas" style="width:0%"></div></div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+          <span>국내봉사</span>
+          <span id="prog-domestic-pct">0%</span>
+        </div>
+        <div class="progress-bar progress-green"><div class="progress-fill" id="prog-domestic" style="width:0%"></div></div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+          <span>취약계층 동계 지원</span>
+          <span>100%</span>
+        </div>
+        <div class="progress-bar progress-red"><div class="progress-fill" style="width:100%"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+          <span>SHU바이처 수기공모전</span>
+          <span>100%</span>
+        </div>
+        <div class="progress-bar progress-purple"><div class="progress-fill" style="width:100%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">예산 배분 현황</span>
+    </div>
+    <div style="max-width:500px;margin:0 auto;">
+      <canvas id="budgetPieChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 일정 관리 ==================== -->
+<div class="section" id="sec-schedule">
+  <div class="page-header">
+    <h2>일정 관리</h2>
+    <p>2026학년도 1학기 SHU VOLUNTEER 프로그램 운영 일정</p>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showScheduleTab('timeline')">타임라인</button>
+    <button class="tab-btn" onclick="showScheduleTab('monthly')">월별 보기</button>
+    <button class="tab-btn" onclick="showScheduleTab('table')">표 보기</button>
+  </div>
+
+  <div id="schedule-timeline" class="schedule-view">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">2026-1학기 전체 일정</span>
+        <button class="btn btn-primary" onclick="openModal('schedule')">+ 일정 추가</button>
+      </div>
+      <div id="timeline-container"></div>
+    </div>
+  </div>
+
+  <div id="schedule-monthly" class="schedule-view" style="display:none;">
+    <div class="grid-2">
+      <div class="panel" id="month-2">
+        <div class="panel-header"><span class="panel-title">2월</span><span class="panel-badge badge-purple">시작</span></div>
+      </div>
+      <div class="panel" id="month-3">
+        <div class="panel-header"><span class="panel-title">3월</span><span class="panel-badge badge-blue">모집</span></div>
+      </div>
+      <div class="panel" id="month-4">
+        <div class="panel-header"><span class="panel-title">4월</span><span class="panel-badge badge-green">준비</span></div>
+      </div>
+      <div class="panel" id="month-5">
+        <div class="panel-header"><span class="panel-title">5월</span><span class="panel-badge badge-red">활동</span></div>
+      </div>
+      <div class="panel" id="month-6">
+        <div class="panel-header"><span class="panel-title">6월</span><span class="panel-badge badge-orange">마무리</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="schedule-table" class="schedule-view" style="display:none;">
+    <div class="panel">
+      <table>
+        <thead>
+          <tr><th>주차</th><th>기간</th><th>내용</th><th>부서 업무</th><th>상태</th></tr>
+        </thead>
+        <tbody id="schedule-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 예산 관리 ==================== -->
+<div class="section" id="sec-budget">
+  <div class="page-header">
+    <h2>예산 관리</h2>
+    <p>2026학년도 SHU VOLUNTEER 프로그램 예산 현황</p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card blue">
+      <div class="stat-label">총 예산</div>
+      <div class="stat-value">216,500,000</div>
+      <div class="stat-sub">원</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">해외봉사 예산</div>
+      <div class="stat-value">206,500,000</div>
+      <div class="stat-sub">과제번호 R-61</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-label">국내봉사 예산</div>
+      <div class="stat-value">10,000,000</div>
+      <div class="stat-sub">26년 예정</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">해외봉사 예산 상세</span>
+        <span class="panel-badge badge-blue">206,500,000원</span>
+      </div>
+      <div class="budget-item">
+        <span class="budget-name">학기 중 봉사대 (6학과 x 20,000,000)</span>
+        <span class="budget-amount">120,000,000원</span>
+      </div>
+      <div class="budget-item">
+        <span class="budget-name">방학 중 봉사대 (3국가 x 25,000,000)</span>
+        <span class="budget-amount">75,000,000원</span>
+      </div>
+      <div class="budget-item">
+        <span class="budget-name">발대식 소모품</span>
+        <span class="budget-amount">8,000,000원</span>
+      </div>
+      <div class="budget-item">
+        <span class="budget-name">운영비</span>
+        <span class="budget-amount">2,000,000원</span>
+      </div>
+      <div class="budget-item">
+        <span class="budget-name">대사협 연회비</span>
+        <span class="budget-amount">1,500,000원</span>
+      </div>
+      <div style="margin-top:16px;">
+        <canvas id="overseasBudgetChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">국내봉사 예산 상세</span>
+        <span class="panel-badge badge-green">10,000,000원</span>
+      </div>
+      <div class="budget-item">
+        <span class="budget-name">운영비 (교통비, 식대 등)</span>
+        <span class="budget-amount">6,000,000원</span>
+      </div>
+      <div class="budget-item">
+        <span class="budget-name">현수막 제작 및 소모품</span>
+        <span class="budget-amount">4,000,000원</span>
+      </div>
+      <div style="margin-top:24px;">
+        <canvas id="domesticBudgetChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">2025학년도 예산 실적 (참고)</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>구분</th><th>본예산(A)</th><th>추경예산(B)</th><th>증감(B-A)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>등록금</td><td>1,500,000</td><td>1,500,000</td><td>0</td></tr>
+        <tr><td>비등록금</td><td>27,000,000</td><td>24,394,000</td><td style="color:#ef4444">-2,606,000</td></tr>
+        <tr><td>국고</td><td>223,915,000</td><td>225,800,000</td><td style="color:#10b981">+1,885,000</td></tr>
+        <tr style="font-weight:700"><td>계</td><td>252,415,000</td><td>251,694,000</td><td style="color:#ef4444">-721,000</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">취약계층 동계 지원 사업 예산</span>
+      <span class="panel-badge badge-red">28,000,000원</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>구분</th><th>품목</th><th>단가</th><th>수량</th><th>금액</th></tr>
+      </thead>
+      <tbody>
+        <tr><td rowspan="2">지원물품</td><td>김치 5KG</td><td>30,000</td><td>600</td><td>18,000,000</td></tr>
+        <tr><td>기타물품 (설렁탕, 라면, 햇반, 누룽지)</td><td>13,045</td><td>600</td><td>7,827,000</td></tr>
+        <tr><td rowspan="5">준비비</td><td>박스 제작</td><td>1,600</td><td>650</td><td>1,040,000</td></tr>
+        <tr><td>스티커 제작</td><td>200</td><td>700</td><td>140,000</td></tr>
+        <tr><td>현수막 제작</td><td>50,000</td><td>1</td><td>50,000</td></tr>
+        <tr><td>봉사자 식대</td><td>10,000</td><td>20</td><td>200,000</td></tr>
+        <tr><td>간식, 박싱용품</td><td>-</td><td>-</td><td>743,000</td></tr>
+        <tr style="font-weight:700"><td colspan="4">합계</td><td>28,000,000</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== KPI 모니터링 ==================== -->
+<div class="section" id="sec-kpi">
+  <div class="page-header">
+    <h2>KPI 모니터링</h2>
+    <p>부서 목표 지표 현황 및 향후 3년간 목표값</p>
+  </div>
+
+  <div class="grid-3">
+    <div class="panel kpi-card">
+      <div class="kpi-label">해외봉사 프로그램 운영 지수</div>
+      <canvas id="kpi1Chart" width="180" height="180"></canvas>
+      <div class="kpi-value" style="color:#3b82f6">97.6%</div>
+      <div class="kpi-target">2025 실적 → 2026 목표: 98%</div>
+    </div>
+    <div class="panel kpi-card">
+      <div class="kpi-label">국내봉사 프로그램 운영 지수</div>
+      <canvas id="kpi2Chart" width="180" height="180"></canvas>
+      <div class="kpi-value" style="color:#10b981">95.3%</div>
+      <div class="kpi-target">2024 실적 → 2026 목표: 96%</div>
+    </div>
+    <div class="panel kpi-card">
+      <div class="kpi-label">사회적 기여 문화 확산 지수</div>
+      <canvas id="kpi3Chart" width="180" height="180"></canvas>
+      <div class="kpi-value" style="color:#8b5cf6">95.8%</div>
+      <div class="kpi-target">2024 실적 → 2026 목표: 96%</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">KPI 산출식</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>KPI</th><th>산출식</th><th>'24 실적</th><th>'25 목표</th><th>'25 실적</th><th>'26 목표</th><th>'27 목표</th><th>'28 목표</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>해외봉사 프로그램 운영 지수</td>
+          <td style="font-size:11px">(사전교육 참여율/목푯값)x0.3 + (참여자수/목푯값)x0.3 + (만족도/목푯값)x0.4 x100</td>
+          <td>97.6%</td><td>98%</td><td>97.6%</td><td><strong>98%</strong></td><td>98%</td><td>98%</td>
+        </tr>
+        <tr>
+          <td>국내봉사 프로그램 운영 지수</td>
+          <td style="font-size:11px">(위기가정 지원건수/목푯값)x0.4 + (운영건수/목푯값)x0.3 + (만족도/목푯값)x0.3 x100</td>
+          <td>95.3%</td><td>96%</td><td>1월 예정</td><td><strong>96%</strong></td><td>96%</td><td>96%</td>
+        </tr>
+        <tr>
+          <td>사회적 기여 문화 확산 지수</td>
+          <td style="font-size:11px">(참여율/목푯값)x0.3 + (만족도/목푯값)x0.3 + (장학금 지급액/목푯값)x0.4 x100</td>
+          <td>95.8%</td><td>96%</td><td>1월 예정</td><td><strong>96%</strong></td><td>96%</td><td>96%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">연도별 KPI 추이</span></div>
+    <canvas id="kpiTrendChart" height="100"></canvas>
+  </div>
+</div>
+
+<!-- ==================== 사업 관리 ==================== -->
+<div class="section" id="sec-programs">
+  <div class="page-header">
+    <h2>사업 관리</h2>
+    <p>2026학년도 주요 사업 현황</p>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showProgramTab('overseas')">해외봉사</button>
+    <button class="tab-btn" onclick="showProgramTab('domestic')">국내봉사</button>
+    <button class="tab-btn" onclick="showProgramTab('winter')">동계 지원</button>
+    <button class="tab-btn" onclick="showProgramTab('contest')">수기공모전</button>
+  </div>
+
+  <!-- 해외봉사 -->
+  <div id="prog-overseas-tab" class="program-view">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">해외 현장체험학습 SHU-Volunteer</span>
+        <span class="panel-badge badge-blue">206,500,000원</span>
+      </div>
+      <p style="font-size:13px;color:#666;line-height:1.8;margin-bottom:16px;">
+        해외봉사·국내봉사 프로그램 운영 고도화를 통해 학생의 전인적 성장과 사회적 책임 의식을 강화하고,
+        ESG 기반의 지속가능한 사회공헌 모델을 구축하여 대학의 건강한 인재 양성 목표 달성에 기여
+      </p>
+      <h4 style="font-size:14px;margin-bottom:12px;">전략과제</h4>
+      <ul style="font-size:13px;color:#555;line-height:2;padding-left:20px;">
+        <li>해외봉사 프로그램 운영 향상을 위한 사전교육 체계 강화</li>
+        <li>글로벌 봉사 프로그램 다변화 및 만족도 조사 정례화 추진</li>
+      </ul>
+      <div style="margin-top:20px;">
+        <h4 style="font-size:14px;margin-bottom:12px;">예산 구성</h4>
+        <div class="budget-item"><span class="budget-name">학기 중 봉사대 (6학과)</span><span class="budget-amount">120,000,000원</span></div>
+        <div class="budget-item"><span class="budget-name">방학 중 봉사대 (3국가)</span><span class="budget-amount">75,000,000원</span></div>
+        <div class="budget-item"><span class="budget-name">봉사대 발대식 소모품 및 운영비</span><span class="budget-amount">11,500,000원</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 국내봉사 -->
+  <div id="prog-domestic-tab" class="program-view" style="display:none;">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">국내 봉사대</span>
+        <span class="panel-badge badge-green">10,000,000원</span>
+      </div>
+      <p style="font-size:13px;color:#666;line-height:1.8;margin-bottom:16px;">
+        국내봉사 프로그램 운영 지수 제고를 위한 위기가정 지원 확대, 지역사회 연계 봉사 플랫폼 고도화,
+        프로그램 운영 안정성 강화
+      </p>
+      <h4 style="font-size:14px;margin-bottom:12px;">전략과제</h4>
+      <ul style="font-size:13px;color:#555;line-height:2;padding-left:20px;">
+        <li>위기가정 지원 확대</li>
+        <li>지역사회 연계 봉사 플랫폼 고도화</li>
+        <li>프로그램 운영 안정성 강화</li>
+      </ul>
+      <div style="margin-top:20px;">
+        <h4 style="font-size:14px;margin-bottom:12px;">예산 구성</h4>
+        <div class="budget-item"><span class="budget-name">운영비 (교통비, 식대 등)</span><span class="budget-amount">6,000,000원</span></div>
+        <div class="budget-item"><span class="budget-name">현수막 제작 및 소모품</span><span class="budget-amount">4,000,000원</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 동계 지원 -->
+  <div id="prog-winter-tab" class="program-view" style="display:none;">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">취약계층 동계 지원 사업</span>
+        <span class="panel-badge badge-red">28,000,000원</span>
+      </div>
+      <p style="font-size:13px;color:#666;line-height:1.8;margin-bottom:16px;">
+        아드라코리아와 협력하여 동대문구 지역 취약계층에 대한 동계물품 지원. "희망상자" 브랜딩.
+        2025.11.19(수) 시행 완료.
+      </p>
+      <div class="stats-grid" style="margin:16px 0;">
+        <div class="stat-card green" style="padding:14px;">
+          <div class="stat-label">지원 세대</div>
+          <div class="stat-value" style="font-size:22px;">600세대</div>
+        </div>
+        <div class="stat-card blue" style="padding:14px;">
+          <div class="stat-label">총 사업 예산</div>
+          <div class="stat-value" style="font-size:22px;">2,800만원</div>
+        </div>
+        <div class="stat-card purple" style="padding:14px;">
+          <div class="stat-label">1가구 지원액</div>
+          <div class="stat-value" style="font-size:22px;">39,925원</div>
+        </div>
+      </div>
+      <h4 style="font-size:14px;margin:16px 0 12px;">지원 물품 (1가구)</h4>
+      <p style="font-size:13px;color:#555;">김치(5KG), 설렁탕(3EA), 라면(5EA), 햇반(3EA), 누룽지(1EA)</p>
+      <h4 style="font-size:14px;margin:16px 0 12px;">배분 계획</h4>
+      <p style="font-size:13px;color:#555;">동대문구청 600개 지원 → 동문 및 동대문종복에 각각 200개씩 지정</p>
+    </div>
+  </div>
+
+  <!-- 수기공모전 -->
+  <div id="prog-contest-tab" class="program-view" style="display:none;">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">SHU바이처 수기공모전 (개인/단체)</span>
+        <span class="panel-badge badge-purple">2,800,000원</span>
+      </div>
+      <div class="grid-2" style="margin:16px 0;">
+        <div>
+          <h4 style="font-size:14px;margin-bottom:12px;">지원 현황</h4>
+          <p style="font-size:13px;color:#555;line-height:2;">
+            개인 30명: 간호과 20, 치위생과 7, 사회복지과 1, 뷰티융합 1, 의료정보과 1<br>
+            단체 3개: 천사랑(간호, 47명), 사랑나눔(간호, 44명), 다솜누리(치위생, 41명)
+          </p>
+        </div>
+        <div>
+          <h4 style="font-size:14px;margin-bottom:12px;">평가 자문위원</h4>
+          <p style="font-size:13px;color:#555;line-height:2;">김경목, 강병철, 나현철</p>
+        </div>
+      </div>
+      <h4 style="font-size:14px;margin:16px 0 12px;">상금 구조 (2025년 기준)</h4>
+      <table>
+        <thead><tr><th>구분</th><th>대상</th><th>최우수상</th><th>우수상</th></tr></thead>
+        <tbody>
+          <tr><td>개인</td><td>2명 x 200,000 = 400,000</td><td>3명 x 150,000 = 450,000</td><td>7명 x 50,000 = 350,000</td></tr>
+          <tr><td>단체</td><td>1팀 x 200,000</td><td>1팀 x 170,000</td><td>1팀 x 130,000</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 참여자 관리 ==================== -->
+<div class="section" id="sec-participants">
+  <div class="page-header">
+    <h2>참여자 관리</h2>
+    <p>SHU바이처 수기공모전 참여자 명단</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">개인 참여자 (30명)</span>
+      <input type="text" class="search-box" placeholder="이름 또는 학과로 검색..." oninput="filterParticipants(this.value)">
+    </div>
+    <table>
+      <thead>
+        <tr><th>번호</th><th>소속</th><th>성명</th><th>학번</th></tr>
+      </thead>
+      <tbody id="participants-body"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">단체 참여자 (3팀)</span>
+    </div>
+    <table>
+      <thead><tr><th>번호</th><th>소속</th><th>동아리명</th><th>회원수</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>간호학과</td><td>천사랑</td><td>47명</td></tr>
+        <tr><td>2</td><td>간호학과</td><td>사랑나눔</td><td>44명</td></tr>
+        <tr><td>3</td><td>치위생과</td><td>다솜누리</td><td>41명</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">사회봉사단 운영위원회</span>
+    </div>
+    <p style="font-size:13px;color:#555;line-height:2;">
+      박주희, 김경목, 강병철, 김경목, 김성민, 김예진, 김소연, 구자영, 나현철, 이선우, 조장원
+    </p>
+  </div>
+</div>
+
+<!-- ==================== 업무 체크리스트 ==================== -->
+<div class="section" id="sec-checklist">
+  <div class="page-header">
+    <h2>업무 체크리스트</h2>
+    <p>2026-1학기 SHU VOLUNTEER 주요 업무 추적</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">2월 - 사전 준비</span>
+        <span class="panel-badge badge-purple">준비</span>
+      </div>
+      <div id="checklist-feb"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">3월 - 모집 및 선발</span>
+        <span class="panel-badge badge-blue">모집</span>
+      </div>
+      <div id="checklist-mar"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">4~5월 - 준비 및 활동</span>
+        <span class="panel-badge badge-green">활동</span>
+      </div>
+      <div id="checklist-may"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">6월~ - 사후 관리</span>
+        <span class="panel-badge badge-orange">마무리</span>
+      </div>
+      <div id="checklist-jun"></div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title">일정 추가</h3>
+    <input type="text" id="modal-name" placeholder="일정명">
+    <input type="date" id="modal-date">
+    <textarea id="modal-desc" placeholder="상세 내용"></textarea>
+    <select id="modal-status">
+      <option value="upcoming">예정</option>
+      <option value="progress">진행중</option>
+      <option value="done">완료</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveScheduleItem()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ DATA ============
+const scheduleData = [
+  { week:'사전', period:'2월', date:'2026-02-01', content:'국가 선정', detail:'사회봉사운영위원회 - 국가, 인솔자수, 학생수, 예산(자부담금) 결정', status:'upcoming', month:2 },
+  { week:'1)', period:'2월 23일(월)~27일(목)', date:'2026-02-23', content:'인솔자 선정(학과, 연합)', detail:'교수: 학과별 인솔교수 공문발송 및 수신\n직원: 지원모집 안내(슈톡)', status:'upcoming', month:2 },
+  { week:'2)', period:'3월 3일(수)~15일(일)', date:'2026-03-03', content:'학생 모집', detail:'학과별 공문발송, 홈페이지/LMS 팝업 홍보', status:'upcoming', month:3 },
+  { week:'3)', period:'3월 10일(화) 5,6교시', date:'2026-03-10', content:'채플 발표', detail:'2025 SHU Volunteer 동계 봉사대(오만,대만) 홍보\n2026-1학기 학생모집 홍보', status:'upcoming', month:3 },
+  { week:'4)', period:'3월 16일(월)~20일(금)', date:'2026-03-16', content:'학생 면접', detail:'면접장소 섭외, 면접 지원', status:'upcoming', month:3 },
+  { week:'5)', period:'3월 23일(월)~24일(화)', date:'2026-03-23', content:'사회봉사위원회 결의 / 입찰', detail:'인솔교수명, 학생명, 발대식 일정 결정\n소기 사이즈, 수량 사전 조사', status:'upcoming', month:3 },
+  { week:'6)', period:'5월 13일(수)~15일(금)', date:'2026-05-13', content:'발대식, 안전교육', detail:'학생물품 사전조사 지원(상의)', status:'upcoming', month:5 },
+  { week:'7)', period:'5월 18일(월)~22일(금)', date:'2026-05-18', content:'MISSION WEEK 봉사 활동', detail:'해외봉사 현장 활동', status:'upcoming', month:5 },
+  { week:'8)', period:'13주 이후', date:'2026-06-15', content:'봉사 활동 만족도 조사 / 2학기 채플 발표', detail:'만족도 조사 실시, 안교 및 2학기 채플 발표 준비', status:'upcoming', month:6 },
+];
+
+let customSchedules = JSON.parse(localStorage.getItem('shu_custom_schedules') || '[]');
+
+const participants = [
+  {no:1,dept:'간호학과',name:'권우석',id:'202210003'},
+  {no:2,dept:'간호학과',name:'양예원',id:'202310068'},
+  {no:3,dept:'간호학과',name:'이수정',id:'202310084'},
+  {no:4,dept:'간호학과',name:'김예진',id:'202310512'},
+  {no:5,dept:'간호학과',name:'이서진',id:'202310523'},
+  {no:6,dept:'간호학과',name:'권은서',id:'202410005'},
+  {no:7,dept:'간호학과',name:'김윤지',id:'202410025'},
+  {no:8,dept:'간호학과',name:'박세영',id:'202410046'},
+  {no:9,dept:'간호학과',name:'서지윤',id:'202410062'},
+  {no:10,dept:'간호학과',name:'이선우',id:'202410097'},
+  {no:11,dept:'간호학과',name:'조예지',id:'202410124'},
+  {no:12,dept:'간호학과',name:'지수아',id:'202410132'},
+  {no:13,dept:'간호학과',name:'박윤아',id:'202410522'},
+  {no:14,dept:'간호학과',name:'김도희',id:'202510012'},
+  {no:15,dept:'간호학과',name:'김드보라',id:'202510013'},
+  {no:16,dept:'간호학과',name:'김시라',id:'202510020'},
+  {no:17,dept:'간호학과',name:'문지현',id:'202510041'},
+  {no:18,dept:'간호학과',name:'박나은',id:'202510042'},
+  {no:19,dept:'간호학과',name:'양아연',id:'202510075'},
+  {no:20,dept:'간호학과',name:'정민재',id:'202510122'},
+  {no:21,dept:'뷰티융합과',name:'김하은',id:'202510259'},
+  {no:22,dept:'사회복지과',name:'전창인',id:'202310383'},
+  {no:23,dept:'의료정보과',name:'김나현',id:'202510595'},
+  {no:24,dept:'치위생과',name:'최은서',id:'202310238'},
+  {no:25,dept:'치위생과',name:'허윤지',id:'202310240'},
+  {no:26,dept:'치위생과',name:'김서진',id:'202410165'},
+  {no:27,dept:'치위생과',name:'김서현',id:'202410166'},
+  {no:28,dept:'치위생과',name:'박한경',id:'202410187'},
+  {no:29,dept:'치위생과',name:'윤희진',id:'202410204'},
+  {no:30,dept:'치위생과',name:'정민서',id:'202410221'},
+];
+
+const checklistData = {
+  feb: [
+    '국가 선정 (사회봉사운영위원회)',
+    '인솔자수, 학생수, 예산 확정',
+    '인솔자 선정 - 교수(학과회의록 첨부)',
+    '인솔자 선정 - 직원(지원모집)',
+    '연합봉사대 담당목사님과 상의하여 공문발송',
+  ],
+  mar: [
+    '학과별 공문발송 (학생모집)',
+    '홈페이지, LMS 팝업 홍보',
+    '채플순서 준비',
+    '채플 발표 (3/10 화 5,6교시)',
+    '학생 면접 (면접장소 섭외)',
+    '사회봉사위원회 결의',
+    '입찰 (행정혁신처) 진행',
+    '소기 사이즈, 수량 사전 조사',
+  ],
+  may: [
+    '학생물품 사전조사 지원(상의)',
+    '발대식 준비',
+    '안전교육 실시',
+    'MISSION WEEK 봉사 활동',
+  ],
+  jun: [
+    '봉사 활동 만족도 조사',
+    '안교 발표 준비',
+    '2학기 채플 발표 준비',
+    '결과 보고서 작성',
+    'KPI 실적 데이터 수집',
+  ]
+};
+
+// ============ NAVIGATION ============
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ============ SCHEDULE ============
+function showScheduleTab(tab) {
+  document.querySelectorAll('.schedule-view').forEach(v => v.style.display = 'none');
+  document.getElementById('schedule-' + tab).style.display = 'block';
+  document.querySelectorAll('#sec-schedule .tab-btn').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+function getStatusClass(date) {
+  const today = new Date();
+  const d = new Date(date);
+  if (d < today) return 'status-done';
+  const diff = (d - today) / (1000*60*60*24);
+  if (diff <= 7) return 'status-progress';
+  return 'status-upcoming';
+}
+
+function getStatusLabel(date) {
+  const today = new Date();
+  const d = new Date(date);
+  if (d < today) return '완료';
+  const diff = (d - today) / (1000*60*60*24);
+  if (diff <= 7) return '진행중';
+  return '예정';
+}
+
+function getTimelineColor(month) {
+  const colors = {2:'#8b5cf6',3:'#3b82f6',4:'#10b981',5:'#e94560',6:'#f59e0b'};
+  return colors[month] || '#64748b';
+}
+
+function renderTimeline() {
+  const all = [...scheduleData, ...customSchedules].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const container = document.getElementById('timeline-container');
+  container.innerHTML = all.map(item => `
+    <div class="timeline-item">
+      <div class="timeline-date">${item.period}</div>
+      <div class="timeline-dot" style="background:${getTimelineColor(item.month)}"></div>
+      <div class="timeline-content">
+        <h4>${item.content} <span class="status ${getStatusClass(item.date)}">${getStatusLabel(item.date)}</span></h4>
+        <p>${item.detail.replace(/\n/g,'<br>')}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderScheduleTable() {
+  const all = [...scheduleData, ...customSchedules].sort((a,b) => new Date(a.date) - new Date(b.date));
+  document.getElementById('schedule-table-body').innerHTML = all.map(item => `
+    <tr>
+      <td>${item.week}</td>
+      <td>${item.period}</td>
+      <td>${item.content}</td>
+      <td style="font-size:12px;color:#666;max-width:300px;">${item.detail.replace(/\n/g,'<br>')}</td>
+      <td><span class="status ${getStatusClass(item.date)}">${getStatusLabel(item.date)}</span></td>
+    </tr>
+  `).join('');
+}
+
+function renderMonthlyView() {
+  const all = [...scheduleData, ...customSchedules];
+  [2,3,4,5,6].forEach(m => {
+    const items = all.filter(i => i.month === m);
+    const container = document.getElementById('month-' + m);
+    const existing = container.querySelectorAll('.timeline-item');
+    existing.forEach(e => e.remove());
+    items.forEach(item => {
+      container.innerHTML += `
+        <div class="timeline-item">
+          <div class="timeline-content">
+            <h4>${item.content} <span class="status ${getStatusClass(item.date)}">${getStatusLabel(item.date)}</span></h4>
+            <p>${item.period} - ${item.detail.replace(/\n/g,', ')}</p>
+          </div>
+        </div>
+      `;
+    });
+    if (items.length === 0) {
+      container.innerHTML += '<p style="font-size:13px;color:#aaa;padding:8px 0;">등록된 일정 없음</p>';
+    }
+  });
+}
+
+// ============ UPCOMING SCHEDULE ============
+function renderUpcoming() {
+  const today = new Date();
+  const all = [...scheduleData, ...customSchedules]
+    .filter(i => new Date(i.date) >= today)
+    .sort((a,b) => new Date(a.date) - new Date(b.date))
+    .slice(0, 5);
+
+  document.getElementById('upcoming-schedule').innerHTML = all.map(item => `
+    <div class="timeline-item">
+      <div class="timeline-date">${item.period}</div>
+      <div class="timeline-dot" style="background:${getTimelineColor(item.month)}"></div>
+      <div class="timeline-content">
+        <h4>${item.content}</h4>
+        <p>${item.detail.split('\n')[0]}</p>
+      </div>
+    </div>
+  `).join('') || '<p style="font-size:13px;color:#aaa;">예정된 일정이 없습니다.</p>';
+}
+
+// ============ PROGRESS ============
+function updateProgress() {
+  const today = new Date();
+  const all = scheduleData;
+  const done = all.filter(i => new Date(i.date) < today).length;
+  const pct = Math.round((done / all.length) * 100);
+
+  document.getElementById('prog-overseas').style.width = pct + '%';
+  document.getElementById('prog-overseas-pct').textContent = pct + '%';
+  document.getElementById('prog-domestic').style.width = Math.min(pct, 100) + '%';
+  document.getElementById('prog-domestic-pct').textContent = Math.min(pct, 100) + '%';
+
+  // Dashboard status
+  if (pct === 0) document.getElementById('dash-status').textContent = '준비중';
+  else if (pct < 50) document.getElementById('dash-status').textContent = '진행중';
+  else if (pct < 100) document.getElementById('dash-status').textContent = '진행중';
+  else document.getElementById('dash-status').textContent = '완료';
+}
+
+// ============ PARTICIPANTS ============
+function renderParticipants(filter = '') {
+  const filtered = filter
+    ? participants.filter(p => p.name.includes(filter) || p.dept.includes(filter))
+    : participants;
+  document.getElementById('participants-body').innerHTML = filtered.map(p => `
+    <tr><td>${p.no}</td><td>${p.dept}</td><td>${p.name}</td><td>${p.id}</td></tr>
+  `).join('');
+}
+function filterParticipants(val) { renderParticipants(val); }
+
+// ============ CHECKLIST ============
+function renderChecklist() {
+  const saved = JSON.parse(localStorage.getItem('shu_checklist') || '{}');
+  Object.keys(checklistData).forEach(key => {
+    const container = document.getElementById('checklist-' + key);
+    container.innerHTML = checklistData[key].map((item, i) => {
+      const id = key + '_' + i;
+      const checked = saved[id] ? 'checked' : '';
+      const doneClass = saved[id] ? 'done' : '';
+      return `<div class="check-item ${doneClass}">
+        <input type="checkbox" id="${id}" ${checked} onchange="toggleCheck('${id}')">
+        <label for="${id}">${item}</label>
+      </div>`;
+    }).join('');
+  });
+}
+
+function toggleCheck(id) {
+  const saved = JSON.parse(localStorage.getItem('shu_checklist') || '{}');
+  saved[id] = !saved[id];
+  localStorage.setItem('shu_checklist', JSON.stringify(saved));
+  renderChecklist();
+}
+
+// ============ MODAL ============
+function openModal(type) {
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+function saveScheduleItem() {
+  const name = document.getElementById('modal-name').value;
+  const date = document.getElementById('modal-date').value;
+  const desc = document.getElementById('modal-desc').value;
+  if (!name || !date) { alert('일정명과 날짜를 입력해주세요.'); return; }
+  const month = new Date(date).getMonth() + 1;
+  customSchedules.push({ week:'추가', period:date, date, content:name, detail:desc, status:'upcoming', month });
+  localStorage.setItem('shu_custom_schedules', JSON.stringify(customSchedules));
+  closeModal();
+  renderTimeline(); renderScheduleTable(); renderMonthlyView(); renderUpcoming();
+  document.getElementById('modal-name').value = '';
+  document.getElementById('modal-date').value = '';
+  document.getElementById('modal-desc').value = '';
+}
+
+// ============ PROGRAM TABS ============
+function showProgramTab(tab) {
+  document.querySelectorAll('.program-view').forEach(v => v.style.display = 'none');
+  document.getElementById('prog-' + tab + '-tab').style.display = 'block';
+  document.querySelectorAll('#sec-programs .tab-btn').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+// ============ DATE ============
+function updateDate() {
+  const today = new Date();
+  const mm = today.getMonth() + 1;
+  const dd = today.getDate();
+  document.getElementById('dash-today').textContent = `${mm}월 ${dd}일`;
+
+  // D-day to next event
+  const next = [...scheduleData, ...customSchedules]
+    .filter(i => new Date(i.date) >= today)
+    .sort((a,b) => new Date(a.date) - new Date(b.date))[0];
+  if (next) {
+    const diff = Math.ceil((new Date(next.date) - today) / (1000*60*60*24));
+    document.getElementById('dash-dday').textContent = `다음 일정: ${next.content} (D-${diff})`;
+  }
+}
+
+// ============ CHARTS ============
+function initCharts() {
+  // Budget Pie
+  new Chart(document.getElementById('budgetPieChart'), {
+    type:'doughnut',
+    data:{
+      labels:['학기중 봉사대','방학중 봉사대','발대식 소모품','운영비','대사협 연회비','국내봉사'],
+      datasets:[{
+        data:[120000000,75000000,8000000,2000000,1500000,10000000],
+        backgroundColor:['#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe','#10b981'],
+        borderWidth:0,
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{position:'bottom',labels:{font:{size:11,family:'Noto Sans KR'}}},
+      }
+    }
+  });
+
+  // Overseas Budget Bar
+  new Chart(document.getElementById('overseasBudgetChart'), {
+    type:'bar',
+    data:{
+      labels:['학기중 봉사대','방학중 봉사대','발대식','운영비','연회비'],
+      datasets:[{
+        label:'금액(만원)',
+        data:[12000,7500,800,200,150],
+        backgroundColor:['#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe'],
+        borderRadius:6,
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'만'}}}
+    }
+  });
+
+  // Domestic Budget
+  new Chart(document.getElementById('domesticBudgetChart'), {
+    type:'bar',
+    data:{
+      labels:['운영비(교통,식대)','현수막/소모품'],
+      datasets:[{
+        label:'금액(만원)',
+        data:[600,400],
+        backgroundColor:['#10b981','#34d399'],
+        borderRadius:6,
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'만'}}}
+    }
+  });
+
+  // KPI Doughnut Charts
+  const kpiConfig = (val, color) => ({
+    type:'doughnut',
+    data:{
+      datasets:[{data:[val,100-val],backgroundColor:[color,'#f1f5f9'],borderWidth:0}]
+    },
+    options:{
+      responsive:true,
+      cutout:'75%',
+      plugins:{legend:{display:false},tooltip:{enabled:false}},
+      rotation:-90,
+      circumference:180,
+    }
+  });
+
+  new Chart(document.getElementById('kpi1Chart'), kpiConfig(97.6,'#3b82f6'));
+  new Chart(document.getElementById('kpi2Chart'), kpiConfig(95.3,'#10b981'));
+  new Chart(document.getElementById('kpi3Chart'), kpiConfig(95.8,'#8b5cf6'));
+
+  // KPI Trend
+  new Chart(document.getElementById('kpiTrendChart'), {
+    type:'line',
+    data:{
+      labels:["'24 실적","'25 목표","'25 실적","'26 목표","'27 목표","'28 목표"],
+      datasets:[
+        {label:'해외봉사',data:[97.6,98,97.6,98,98,98],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',tension:0.3,fill:true},
+        {label:'국내봉사',data:[95.3,96,null,96,96,96],borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.1)',tension:0.3,fill:true},
+        {label:'사회적 기여',data:[95.8,96,null,96,96,96],borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.1)',tension:0.3,fill:true},
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{position:'bottom',labels:{font:{size:11,family:'Noto Sans KR'}}}},
+      scales:{
+        y:{min:93,max:100,ticks:{callback:v=>v+'%'}},
+      }
+    }
+  });
+}
+
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded', () => {
+  updateDate();
+  renderTimeline();
+  renderScheduleTable();
+  renderMonthlyView();
+  renderUpcoming();
+  updateProgress();
+  renderParticipants();
+  renderChecklist();
+  initCharts();
+});
+</script>
+</body>
+</html>
