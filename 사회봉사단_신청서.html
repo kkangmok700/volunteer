@@ -245,8 +245,13 @@ body {
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-function submitApplication() {
+const SUPABASE_URL = 'https://qikbmhabsktpoogzxflc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_9sAMXSam9SKxq4-QcRewqg_eGa_o3TE';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function submitApplication() {
   // Validate
   let valid = true;
   const name = document.getElementById('app-name').value.trim();
@@ -269,7 +274,6 @@ function submitApplication() {
 
   if (!valid) return;
 
-  // Create application object
   const now = new Date();
   const dateStr = now.getFullYear() + '-' +
     String(now.getMonth()+1).padStart(2,'0') + '-' +
@@ -277,26 +281,33 @@ function submitApplication() {
     String(now.getHours()).padStart(2,'0') + ':' +
     String(now.getMinutes()).padStart(2,'0');
 
-  const application = {
-    id: 'APP-' + Date.now(),
+  // Disable button while saving
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '제출 중...';
+
+  // Save to Supabase
+  const { error } = await sb.from('applications').insert({
+    app_id: 'APP-' + Date.now(),
     name,
-    studentId,
+    student_id: studentId,
     dept,
     phone,
     email,
     motivation,
-    overseasExp,
+    overseas_exp: overseasExp,
     passport,
     status: 'pending',
-    appliedAt: dateStr,
-    reviewedAt: null,
-    reviewNote: ''
-  };
+    applied_at: dateStr
+  });
 
-  // Save to localStorage
-  const apps = JSON.parse(localStorage.getItem('shu_applications') || '[]');
-  apps.push(application);
-  localStorage.setItem('shu_applications', JSON.stringify(apps));
+  btn.disabled = false;
+  btn.textContent = '신청서 제출';
+
+  if (error) {
+    alert('제출 중 오류가 발생했습니다. 다시 시도해주세요.\n' + (error.message || ''));
+    return;
+  }
 
   // Show success
   document.getElementById('formSection').style.display = 'none';

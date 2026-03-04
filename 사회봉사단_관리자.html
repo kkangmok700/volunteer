@@ -6,6 +6,7 @@
 <title>SHU Volunteer 2026 - 관리자 페이지</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
 
@@ -575,7 +576,6 @@ tr:hover td { background:#f8fafc; }
     </div>
   </div>
 
-  <!-- 신청 링크 공유 -->
   <div class="panel">
     <div class="panel-header">
       <span class="panel-title">신청 링크 공유</span>
@@ -585,7 +585,7 @@ tr:hover td { background:#f8fafc; }
       <div class="share-qr" id="qrcode-container"></div>
       <div class="share-info">
         <p style="font-size:14px;font-weight:600;margin-bottom:4px;">참여 신청 페이지</p>
-        <p style="font-size:12px;color:#888;line-height:1.6;">아래 QR코드를 스캔하거나 링크를 공유하여 신청서를 받을 수 있습니다.<br>신청서 파일(사회봉사단_신청서.html)이 같은 폴더에 있어야 합니다.</p>
+        <p style="font-size:12px;color:#888;line-height:1.6;">아래 QR코드를 스캔하거나 링크를 공유하여 신청서를 받을 수 있습니다.</p>
         <div class="share-url-box">
           <input type="text" id="share-url" readonly value="">
           <button class="btn btn-primary btn-sm" onclick="copyShareUrl()">복사</button>
@@ -594,7 +594,6 @@ tr:hover td { background:#f8fafc; }
     </div>
   </div>
 
-  <!-- 신청 현황 통계 -->
   <div class="stats-grid">
     <div class="stat-card blue">
       <div class="stat-label">전체 신청</div>
@@ -618,7 +617,6 @@ tr:hover td { background:#f8fafc; }
     </div>
   </div>
 
-  <!-- 신청 목록 -->
   <div class="panel">
     <div class="panel-header">
       <span class="panel-title">신청 목록 (<span id="app-list-count">0</span>건)</span>
@@ -966,110 +964,73 @@ tr:hover td { background:#f8fafc; }
 <div class="toast" id="toast"></div>
 
 <script>
-// ============ STORAGE KEYS ============
-const KEYS = {
-  participants: 'shu_admin_participants',
-  groups: 'shu_admin_groups',
-  schedules: 'shu_admin_schedules',
-  budgetOverseas: 'shu_admin_budget_overseas',
-  budgetDomestic: 'shu_admin_budget_domestic',
-  announces: 'shu_admin_announces',
-  logs: 'shu_admin_logs',
-  settings: 'shu_admin_settings',
-  credentials: 'shu_admin_credentials',
-  applications: 'shu_applications',
-};
+// ============ SUPABASE ============
+const SUPABASE_URL = 'https://qikbmhabsktpoogzxflc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_9sAMXSam9SKxq4-QcRewqg_eGa_o3TE';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ============ DEFAULT DATA ============
-const defaultParticipants = [
-  {no:1,dept:'간호학과',name:'권우석',id:'202210003'},
-  {no:2,dept:'간호학과',name:'양예원',id:'202310068'},
-  {no:3,dept:'간호학과',name:'이수정',id:'202310084'},
-  {no:4,dept:'간호학과',name:'김예진',id:'202310512'},
-  {no:5,dept:'간호학과',name:'이서진',id:'202310523'},
-  {no:6,dept:'간호학과',name:'권은서',id:'202410005'},
-  {no:7,dept:'간호학과',name:'김윤지',id:'202410025'},
-  {no:8,dept:'간호학과',name:'박세영',id:'202410046'},
-  {no:9,dept:'간호학과',name:'서지윤',id:'202410062'},
-  {no:10,dept:'간호학과',name:'이선우',id:'202410097'},
-  {no:11,dept:'간호학과',name:'조예지',id:'202410124'},
-  {no:12,dept:'간호학과',name:'지수아',id:'202410132'},
-  {no:13,dept:'간호학과',name:'박윤아',id:'202410522'},
-  {no:14,dept:'간호학과',name:'김도희',id:'202510012'},
-  {no:15,dept:'간호학과',name:'김드보라',id:'202510013'},
-  {no:16,dept:'간호학과',name:'김시라',id:'202510020'},
-  {no:17,dept:'간호학과',name:'문지현',id:'202510041'},
-  {no:18,dept:'간호학과',name:'박나은',id:'202510042'},
-  {no:19,dept:'간호학과',name:'양아연',id:'202510075'},
-  {no:20,dept:'간호학과',name:'정민재',id:'202510122'},
-  {no:21,dept:'뷰티융합과',name:'김하은',id:'202510259'},
-  {no:22,dept:'사회복지과',name:'전창인',id:'202310383'},
-  {no:23,dept:'의료정보과',name:'김나현',id:'202510595'},
-  {no:24,dept:'치위생과',name:'최은서',id:'202310238'},
-  {no:25,dept:'치위생과',name:'허윤지',id:'202310240'},
-  {no:26,dept:'치위생과',name:'김서진',id:'202410165'},
-  {no:27,dept:'치위생과',name:'김서현',id:'202410166'},
-  {no:28,dept:'치위생과',name:'박한경',id:'202410187'},
-  {no:29,dept:'치위생과',name:'윤희진',id:'202410204'},
-  {no:30,dept:'치위생과',name:'정민서',id:'202410221'},
-];
-
-const defaultGroups = [
-  {no:1,dept:'간호학과',name:'천사랑',count:47},
-  {no:2,dept:'간호학과',name:'사랑나눔',count:44},
-  {no:3,dept:'치위생과',name:'다솜누리',count:41},
-];
-
-const defaultSchedules = [
-  { week:'사전', period:'2월', date:'2026-02-01', content:'국가 선정', detail:'사회봉사운영위원회 - 국가, 인솔자수, 학생수, 예산(자부담금) 결정', month:2 },
-  { week:'1)', period:'2월 23일(월)~27일(목)', date:'2026-02-23', content:'인솔자 선정(학과, 연합)', detail:'교수: 학과별 인솔교수 공문발송 및 수신\n직원: 지원모집 안내(슈톡)', month:2 },
-  { week:'2)', period:'3월 3일(수)~15일(일)', date:'2026-03-03', content:'학생 모집', detail:'학과별 공문발송, 홈페이지/LMS 팝업 홍보', month:3 },
-  { week:'3)', period:'3월 10일(화) 5,6교시', date:'2026-03-10', content:'채플 발표', detail:'2025 SHU Volunteer 동계 봉사대(오만,대만) 홍보\n2026-1학기 학생모집 홍보', month:3 },
-  { week:'4)', period:'3월 16일(월)~20일(금)', date:'2026-03-16', content:'학생 면접', detail:'면접장소 섭외, 면접 지원', month:3 },
-  { week:'5)', period:'3월 23일(월)~24일(화)', date:'2026-03-23', content:'사회봉사위원회 결의 / 입찰', detail:'인솔교수명, 학생명, 발대식 일정 결정\n소기 사이즈, 수량 사전 조사', month:3 },
-  { week:'6)', period:'5월 13일(수)~15일(금)', date:'2026-05-13', content:'발대식, 안전교육', detail:'학생물품 사전조사 지원(상의)', month:5 },
-  { week:'7)', period:'5월 18일(월)~22일(금)', date:'2026-05-18', content:'MISSION WEEK 봉사 활동', detail:'해외봉사 현장 활동', month:5 },
-  { week:'8)', period:'13주 이후', date:'2026-06-15', content:'봉사 활동 만족도 조사', detail:'만족도 조사 실시, 안교 및 2학기 채플 발표 준비', month:6 },
-];
-
-const defaultBudgetOverseas = [
-  { name:'학기 중 봉사대 (6학과 x 20,000,000)', amount:120000000 },
-  { name:'방학 중 봉사대 (3국가 x 25,000,000)', amount:75000000 },
-  { name:'발대식 소모품', amount:8000000 },
-  { name:'운영비', amount:2000000 },
-  { name:'대사협 연회비', amount:1500000 },
-];
-
-const defaultBudgetDomestic = [
-  { name:'운영비 (교통비, 식대 등)', amount:6000000 },
-  { name:'현수막 제작 및 소모품', amount:4000000 },
-];
-
-// ============ DATA LOAD ============
-function loadData(key, defaults) {
-  const saved = localStorage.getItem(key);
-  return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaults));
-}
-function saveData(key, data) {
-  localStorage.setItem(key, JSON.stringify(data));
-}
-
-let participants = loadData(KEYS.participants, defaultParticipants);
-let groups = loadData(KEYS.groups, defaultGroups);
-let schedules = loadData(KEYS.schedules, defaultSchedules);
-let budgetOverseas = loadData(KEYS.budgetOverseas, defaultBudgetOverseas);
-let budgetDomestic = loadData(KEYS.budgetDomestic, defaultBudgetDomestic);
-let announces = loadData(KEYS.announces, []);
-let logs = loadData(KEYS.logs, []);
-let applications = loadData(KEYS.applications, []);
+// ============ LOCAL ARRAYS ============
+let participants = [];
+let groups = [];
+let schedules = [];
+let budgetOverseas = [];
+let budgetDomestic = [];
+let announces = [];
+let applications = [];
+let logs = [];
 let appFilter = 'all';
 
-// ============ LOGIN ============
-function getCredentials() {
-  const saved = localStorage.getItem(KEYS.credentials);
-  return saved ? JSON.parse(saved) : { id:'admin', pw:'shu2026' };
+// ============ SUPABASE LOADERS ============
+async function reloadParticipants() {
+  const { data } = await sb.from('participants').select('*').order('no');
+  participants = (data || []).map(p => ({ _dbId: p.id, no: p.no, dept: p.dept, name: p.name, id: p.student_id }));
+}
+async function reloadGroups() {
+  const { data } = await sb.from('volunteer_groups').select('*').order('no');
+  groups = (data || []).map(g => ({ _dbId: g.id, no: g.no, dept: g.dept, name: g.name, count: g.member_count }));
+}
+async function reloadSchedules() {
+  const { data } = await sb.from('schedules').select('*').order('id');
+  schedules = (data || []).map(s => ({ _dbId: s.id, week: s.week, period: s.period, date: s.date, content: s.content, detail: s.detail || '', month: s.month }));
+}
+async function reloadBudget() {
+  const { data } = await sb.from('budget').select('*').order('id');
+  budgetOverseas = (data || []).filter(b => b.category === 'overseas').map(b => ({ _dbId: b.id, name: b.name, amount: b.amount }));
+  budgetDomestic = (data || []).filter(b => b.category === 'domestic').map(b => ({ _dbId: b.id, name: b.name, amount: b.amount }));
+}
+async function reloadAnnounces() {
+  const { data } = await sb.from('announces').select('*').order('id');
+  announces = (data || []).map(a => ({ _dbId: a.id, title: a.title, content: a.content, pinned: a.pinned, date: a.created_at }));
+}
+async function reloadApplications() {
+  const { data } = await sb.from('applications').select('*').order('id');
+  applications = (data || []).map(a => ({ _dbId: a.id, id: a.app_id, name: a.name, studentId: a.student_id, dept: a.dept, phone: a.phone || '', email: a.email || '', motivation: a.motivation || '', overseasExp: a.overseas_exp || '', passport: a.passport || '', status: a.status, appliedAt: a.applied_at, reviewedAt: a.reviewed_at, reviewNote: a.review_note || '' }));
+}
+async function reloadLogs() {
+  const { data } = await sb.from('logs').select('*').order('id', { ascending: false }).limit(200);
+  logs = (data || []).map(l => ({ _dbId: l.id, time: l.time, type: l.type, message: l.message }));
+}
+async function loadAllData() {
+  await Promise.all([reloadParticipants(), reloadGroups(), reloadSchedules(), reloadBudget(), reloadAnnounces(), reloadApplications(), reloadLogs()]);
 }
 
+// ============ HELPERS ============
+function nowStr() {
+  const now = new Date();
+  return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+}
+function todayStr() {
+  const now = new Date();
+  return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+}
+function formatNumber(n) { return n.toLocaleString('ko-KR'); }
+
+// ============ LOGIN (localStorage only) ============
+const CRED_KEY = 'shu_admin_credentials';
+function getCredentials() {
+  const saved = localStorage.getItem(CRED_KEY);
+  return saved ? JSON.parse(saved) : { id:'admin', pw:'shu2026' };
+}
 function doLogin() {
   const id = document.getElementById('loginId').value;
   const pw = document.getElementById('loginPw').value;
@@ -1082,26 +1043,22 @@ function doLogin() {
     document.getElementById('loginError').style.display = 'block';
   }
 }
-
 function doLogout() {
   addLog('login', '관리자 로그아웃');
   document.getElementById('loginOverlay').classList.remove('hidden');
   document.getElementById('loginPw').value = '';
   document.getElementById('loginError').style.display = 'none';
 }
-
 function changePassword() {
   const cred = getCredentials();
   const currentPw = document.getElementById('set-current-pw').value;
   const newPw = document.getElementById('set-new-pw').value;
   const confirmPw = document.getElementById('set-confirm-pw').value;
   const newId = document.getElementById('set-admin-id').value;
-
   if (currentPw !== cred.pw) { showToast('현재 비밀번호가 올바르지 않습니다.'); return; }
   if (!newPw || newPw.length < 4) { showToast('새 비밀번호는 4자 이상이어야 합니다.'); return; }
   if (newPw !== confirmPw) { showToast('새 비밀번호가 일치하지 않습니다.'); return; }
-
-  saveData(KEYS.credentials, { id: newId || 'admin', pw: newPw });
+  localStorage.setItem(CRED_KEY, JSON.stringify({ id: newId || 'admin', pw: newPw }));
   addLog('edit', '관리자 계정 정보 변경');
   showToast('비밀번호가 변경되었습니다.');
   document.getElementById('set-current-pw').value = '';
@@ -1115,6 +1072,9 @@ function showSection(id, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('sec-' + id).classList.add('active');
   if (el) el.classList.add('active');
+  if (id === 'applications') {
+    reloadApplications().then(() => renderApplications());
+  }
 }
 
 // ============ TOAST ============
@@ -1126,17 +1086,11 @@ function showToast(msg) {
 }
 
 // ============ ACTIVITY LOG ============
-function addLog(type, message) {
-  const now = new Date();
-  const timeStr = now.getFullYear() + '-' +
-    String(now.getMonth()+1).padStart(2,'0') + '-' +
-    String(now.getDate()).padStart(2,'0') + ' ' +
-    String(now.getHours()).padStart(2,'0') + ':' +
-    String(now.getMinutes()).padStart(2,'0') + ':' +
-    String(now.getSeconds()).padStart(2,'0');
+async function addLog(type, message) {
+  const timeStr = nowStr();
   logs.unshift({ time: timeStr, type, message });
   if (logs.length > 200) logs = logs.slice(0, 200);
-  saveData(KEYS.logs, logs);
+  sb.from('logs').insert({ time: timeStr, type, message }).then();
 }
 
 function renderLogs() {
@@ -1144,7 +1098,6 @@ function renderLogs() {
   const dashContainer = document.getElementById('dash-recent-logs');
   const empty = document.getElementById('logs-empty');
   document.getElementById('log-count-badge').textContent = logs.length + '건';
-
   if (logs.length === 0) {
     container.innerHTML = '';
     empty.style.display = 'block';
@@ -1152,7 +1105,6 @@ function renderLogs() {
     return;
   }
   empty.style.display = 'none';
-
   const typeLabel = { create:'추가', edit:'수정', delete:'삭제', login:'로그인', export:'내보내기' };
   container.innerHTML = logs.map(l => `
     <div class="log-item">
@@ -1163,7 +1115,6 @@ function renderLogs() {
       </div>
     </div>
   `).join('');
-
   if (dashContainer) {
     dashContainer.innerHTML = logs.slice(0, 5).map(l => `
       <div class="log-item">
@@ -1177,10 +1128,10 @@ function renderLogs() {
   }
 }
 
-function clearLogs() {
+async function clearLogs() {
   if (!confirm('활동 로그를 모두 삭제하시겠습니까?')) return;
+  await sb.from('logs').delete().gte('id', 0);
   logs = [];
-  saveData(KEYS.logs, logs);
   renderLogs();
   showToast('활동 로그가 초기화되었습니다.');
 }
@@ -1206,7 +1157,6 @@ function renderParticipants(filter = '') {
     </tr>
   `).join('');
 }
-
 function filterParticipants(val) { renderParticipants(val); }
 
 function openParticipantModal(idx) {
@@ -1224,44 +1174,43 @@ function openParticipantModal(idx) {
     document.getElementById('p-id').value = '';
   }
 }
-function closeParticipantModal() {
-  document.getElementById('modal-participant').classList.remove('open');
-}
+function closeParticipantModal() { document.getElementById('modal-participant').classList.remove('open'); }
 
-function saveParticipant() {
+async function saveParticipant() {
   const idx = parseInt(document.getElementById('edit-participant-idx').value);
   const dept = document.getElementById('p-dept').value;
   const name = document.getElementById('p-name').value.trim();
-  const id = document.getElementById('p-id').value.trim();
-  if (!name || !id) { showToast('이름과 학번을 입력해주세요.'); return; }
+  const studentId = document.getElementById('p-id').value.trim();
+  if (!name || !studentId) { showToast('이름과 학번을 입력해주세요.'); return; }
 
   if (idx >= 0) {
-    participants[idx].dept = dept;
-    participants[idx].name = name;
-    participants[idx].id = id;
+    await sb.from('participants').update({ dept, name, student_id: studentId }).eq('id', participants[idx]._dbId);
     addLog('edit', `참여자 수정: ${name} (${dept})`);
     showToast('참여자 정보가 수정되었습니다.');
   } else {
     const no = participants.length > 0 ? Math.max(...participants.map(p=>p.no)) + 1 : 1;
-    participants.push({ no, dept, name, id });
+    await sb.from('participants').insert({ no, dept, name, student_id: studentId });
     addLog('create', `참여자 추가: ${name} (${dept})`);
     showToast('참여자가 추가되었습니다.');
   }
-  saveData(KEYS.participants, participants);
+  await reloadParticipants();
   closeParticipantModal();
   renderParticipants();
   updateDashboard();
 }
-
 function editParticipant(idx) { openParticipantModal(idx); }
 
-function deleteParticipant(idx) {
+async function deleteParticipant(idx) {
   const p = participants[idx];
   if (!confirm(`"${p.name}" 참여자를 삭제하시겠습니까?`)) return;
   addLog('delete', `참여자 삭제: ${p.name} (${p.dept})`);
+  await sb.from('participants').delete().eq('id', p._dbId);
   participants.splice(idx, 1);
-  participants.forEach((p, i) => p.no = i + 1);
-  saveData(KEYS.participants, participants);
+  const updates = participants.map((p, i) => {
+    p.no = i + 1;
+    return sb.from('participants').update({ no: i + 1 }).eq('id', p._dbId);
+  });
+  await Promise.all(updates);
   renderParticipants();
   updateDashboard();
   showToast('참여자가 삭제되었습니다.');
@@ -1285,7 +1234,6 @@ function renderGroups() {
     </tr>
   `).join('');
 }
-
 function openGroupModal(idx) {
   document.getElementById('modal-group').classList.add('open');
   document.getElementById('edit-group-idx').value = idx !== undefined ? idx : -1;
@@ -1303,7 +1251,7 @@ function openGroupModal(idx) {
 }
 function closeGroupModal() { document.getElementById('modal-group').classList.remove('open'); }
 
-function saveGroup() {
+async function saveGroup() {
   const idx = parseInt(document.getElementById('edit-group-idx').value);
   const dept = document.getElementById('g-dept').value;
   const name = document.getElementById('g-name').value.trim();
@@ -1311,29 +1259,32 @@ function saveGroup() {
   if (!name || !count) { showToast('동아리명과 회원수를 입력해주세요.'); return; }
 
   if (idx >= 0) {
-    groups[idx] = { ...groups[idx], dept, name, count };
+    await sb.from('volunteer_groups').update({ dept, name, member_count: count }).eq('id', groups[idx]._dbId);
     addLog('edit', `단체 수정: ${name}`);
     showToast('단체 정보가 수정되었습니다.');
   } else {
     const no = groups.length > 0 ? Math.max(...groups.map(g=>g.no)) + 1 : 1;
-    groups.push({ no, dept, name, count });
+    await sb.from('volunteer_groups').insert({ no, dept, name, member_count: count });
     addLog('create', `단체 추가: ${name} (${count}명)`);
     showToast('단체가 추가되었습니다.');
   }
-  saveData(KEYS.groups, groups);
+  await reloadGroups();
   closeGroupModal();
   renderGroups();
 }
-
 function editGroup(idx) { openGroupModal(idx); }
 
-function deleteGroup(idx) {
+async function deleteGroup(idx) {
   const g = groups[idx];
   if (!confirm(`"${g.name}" 단체를 삭제하시겠습니까?`)) return;
   addLog('delete', `단체 삭제: ${g.name}`);
+  await sb.from('volunteer_groups').delete().eq('id', g._dbId);
   groups.splice(idx, 1);
-  groups.forEach((g, i) => g.no = i + 1);
-  saveData(KEYS.groups, groups);
+  const updates = groups.map((g, i) => {
+    g.no = i + 1;
+    return sb.from('volunteer_groups').update({ no: i + 1 }).eq('id', g._dbId);
+  });
+  await Promise.all(updates);
   renderGroups();
   showToast('단체가 삭제되었습니다.');
 }
@@ -1359,14 +1310,14 @@ function getStatusLabel(date) {
 function renderSchedules() {
   const sorted = [...schedules].sort((a,b) => new Date(a.date) - new Date(b.date));
   document.getElementById('schedule-count').textContent = schedules.length;
-  document.getElementById('schedule-body').innerHTML = sorted.map((s, _) => {
+  document.getElementById('schedule-body').innerHTML = sorted.map((s) => {
     const realIdx = schedules.indexOf(s);
     return `
     <tr>
       <td>${s.week}</td>
       <td>${s.period}</td>
       <td>${s.content}</td>
-      <td style="font-size:12px;color:#666;max-width:250px;">${s.detail.replace(/\n/g,'<br>')}</td>
+      <td style="font-size:12px;color:#666;max-width:250px;">${(s.detail||'').replace(/\n/g,'<br>')}</td>
       <td><span class="status ${getStatusClass(s.date)}">${getStatusLabel(s.date)}</span></td>
       <td>
         <div class="btn-group">
@@ -1401,7 +1352,7 @@ function openScheduleModal(idx) {
 }
 function closeScheduleModal() { document.getElementById('modal-schedule').classList.remove('open'); }
 
-function saveSchedule() {
+async function saveSchedule() {
   const idx = parseInt(document.getElementById('edit-schedule-idx').value);
   const week = document.getElementById('s-week').value.trim();
   const period = document.getElementById('s-period').value.trim();
@@ -1411,43 +1362,39 @@ function saveSchedule() {
   const month = parseInt(document.getElementById('s-month').value);
   if (!content || !date) { showToast('일정명과 날짜를 입력해주세요.'); return; }
 
-  const item = { week: week || '추가', period: period || date, date, content, detail, month };
+  const row = { week: week || '추가', period: period || date, date, content, detail, month };
   if (idx >= 0) {
-    schedules[idx] = item;
+    await sb.from('schedules').update(row).eq('id', schedules[idx]._dbId);
     addLog('edit', `일정 수정: ${content}`);
     showToast('일정이 수정되었습니다.');
   } else {
-    schedules.push(item);
+    await sb.from('schedules').insert(row);
     addLog('create', `일정 추가: ${content}`);
     showToast('일정이 추가되었습니다.');
   }
-  saveData(KEYS.schedules, schedules);
+  await reloadSchedules();
   closeScheduleModal();
   renderSchedules();
   updateDashboard();
 }
-
 function editSchedule(idx) { openScheduleModal(idx); }
 
-function deleteSchedule(idx) {
+async function deleteSchedule(idx) {
   const s = schedules[idx];
   if (!confirm(`"${s.content}" 일정을 삭제하시겠습니까?`)) return;
   addLog('delete', `일정 삭제: ${s.content}`);
-  schedules.splice(idx, 1);
-  saveData(KEYS.schedules, schedules);
+  await sb.from('schedules').delete().eq('id', s._dbId);
+  await reloadSchedules();
   renderSchedules();
   updateDashboard();
   showToast('일정이 삭제되었습니다.');
 }
 
 // ============ BUDGET ============
-function formatNumber(n) { return n.toLocaleString('ko-KR'); }
-
 function renderBudget() {
   const overseasTotal = budgetOverseas.reduce((s,b) => s + b.amount, 0);
   const domesticTotal = budgetDomestic.reduce((s,b) => s + b.amount, 0);
   const total = overseasTotal + domesticTotal;
-
   document.getElementById('budget-total').textContent = formatNumber(total);
   document.getElementById('budget-overseas').textContent = formatNumber(overseasTotal);
   document.getElementById('budget-domestic').textContent = formatNumber(domesticTotal);
@@ -1477,7 +1424,6 @@ function renderBudget() {
       </td>
     </tr>
   `).join('');
-
   renderBudgetChart();
 }
 
@@ -1520,41 +1466,38 @@ function openBudgetModal(cat, idx) {
 }
 function closeBudgetModal() { document.getElementById('modal-budget').classList.remove('open'); }
 
-function saveBudget() {
+async function saveBudget() {
   const raw = document.getElementById('edit-budget-idx').value;
   const category = document.getElementById('b-category').value;
   const name = document.getElementById('b-name').value.trim();
   const amount = parseInt(document.getElementById('b-amount').value);
   if (!name || !amount) { showToast('항목명과 금액을 입력해주세요.'); return; }
 
-  const list = category === 'overseas' ? budgetOverseas : budgetDomestic;
-  const key = category === 'overseas' ? KEYS.budgetOverseas : KEYS.budgetDomestic;
-
   if (raw !== '-1') {
-    const idx = parseInt(raw.split(':')[1]);
-    list[idx] = { name, amount };
+    const [cat, idxStr] = raw.split(':');
+    const idx = parseInt(idxStr);
+    const list = cat === 'overseas' ? budgetOverseas : budgetDomestic;
+    await sb.from('budget').update({ category, name, amount }).eq('id', list[idx]._dbId);
     addLog('edit', `예산 수정: ${name} (${formatNumber(amount)}원)`);
     showToast('예산 항목이 수정되었습니다.');
   } else {
-    list.push({ name, amount });
+    await sb.from('budget').insert({ category, name, amount });
     addLog('create', `예산 추가: ${name} (${formatNumber(amount)}원)`);
     showToast('예산 항목이 추가되었습니다.');
   }
-  saveData(key, list);
+  await reloadBudget();
   closeBudgetModal();
   renderBudget();
 }
-
 function editBudget(cat, idx) { openBudgetModal(cat, idx); }
 
-function deleteBudget(cat, idx) {
+async function deleteBudget(cat, idx) {
   const list = cat === 'overseas' ? budgetOverseas : budgetDomestic;
-  const key = cat === 'overseas' ? KEYS.budgetOverseas : KEYS.budgetDomestic;
   const b = list[idx];
   if (!confirm(`"${b.name}" 항목을 삭제하시겠습니까?`)) return;
   addLog('delete', `예산 삭제: ${b.name}`);
-  list.splice(idx, 1);
-  saveData(key, list);
+  await sb.from('budget').delete().eq('id', b._dbId);
+  await reloadBudget();
   renderBudget();
   showToast('예산 항목이 삭제되었습니다.');
 }
@@ -1564,21 +1507,18 @@ function renderAnnounces() {
   document.getElementById('announce-count').textContent = announces.length;
   const empty = document.getElementById('announce-empty');
   const container = document.getElementById('announce-list');
-
   if (announces.length === 0) {
     container.innerHTML = '';
     empty.style.display = 'block';
     return;
   }
   empty.style.display = 'none';
-
   const sorted = [...announces].sort((a,b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
     return new Date(b.date) - new Date(a.date);
   });
-
-  container.innerHTML = sorted.map((a, _) => {
+  container.innerHTML = sorted.map((a) => {
     const realIdx = announces.indexOf(a);
     return `
     <div class="announce-card ${a.pinned ? 'pinned' : ''}">
@@ -1614,249 +1554,46 @@ function openAnnounceModal(idx) {
 }
 function closeAnnounceModal() { document.getElementById('modal-announce').classList.remove('open'); }
 
-function saveAnnounce() {
+async function saveAnnounce() {
   const idx = parseInt(document.getElementById('edit-announce-idx').value);
   const title = document.getElementById('a-title').value.trim();
   const content = document.getElementById('a-content').value.trim();
   const pinned = document.getElementById('a-pinned').checked;
   if (!title || !content) { showToast('제목과 내용을 입력해주세요.'); return; }
 
-  const now = new Date();
-  const dateStr = now.getFullYear() + '-' +
-    String(now.getMonth()+1).padStart(2,'0') + '-' +
-    String(now.getDate()).padStart(2,'0');
-
   if (idx >= 0) {
-    announces[idx] = { ...announces[idx], title, content, pinned };
+    await sb.from('announces').update({ title, content, pinned }).eq('id', announces[idx]._dbId);
     addLog('edit', `공지 수정: ${title}`);
     showToast('공지사항이 수정되었습니다.');
   } else {
-    announces.push({ title, content, pinned, date: dateStr });
+    await sb.from('announces').insert({ title, content, pinned, created_at: todayStr() });
     addLog('create', `공지 작성: ${title}`);
     showToast('공지사항이 등록되었습니다.');
   }
-  saveData(KEYS.announces, announces);
+  await reloadAnnounces();
   closeAnnounceModal();
   renderAnnounces();
   updateDashboard();
 }
-
 function editAnnounce(idx) { openAnnounceModal(idx); }
 
-function deleteAnnounce(idx) {
+async function deleteAnnounce(idx) {
   const a = announces[idx];
   if (!confirm(`"${a.title}" 공지를 삭제하시겠습니까?`)) return;
   addLog('delete', `공지 삭제: ${a.title}`);
-  announces.splice(idx, 1);
-  saveData(KEYS.announces, announces);
+  await sb.from('announces').delete().eq('id', a._dbId);
+  await reloadAnnounces();
   renderAnnounces();
   updateDashboard();
   showToast('공지사항이 삭제되었습니다.');
 }
 
-// ============ CSV EXPORT ============
-function downloadCSV(filename, csvContent) {
-  const BOM = '\uFEFF';
-  const blob = new Blob([BOM + csvContent], { type:'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(link.href);
-  addLog('export', `CSV 내보내기: ${filename}`);
-}
-
-function exportParticipantsCSV() {
-  let csv = '번호,소속,성명,학번\n';
-  participants.forEach(p => {
-    csv += `${p.no},${p.dept},${p.name},${p.id}\n`;
-  });
-  downloadCSV('참여자_목록.csv', csv);
-  showToast('참여자 CSV가 다운로드되었습니다.');
-}
-
-function exportScheduleCSV() {
-  let csv = '주차,기간,내용,상세,날짜,월\n';
-  schedules.forEach(s => {
-    csv += `"${s.week}","${s.period}","${s.content}","${s.detail.replace(/\n/g,' ')}","${s.date}",${s.month}\n`;
-  });
-  downloadCSV('일정_목록.csv', csv);
-  showToast('일정 CSV가 다운로드되었습니다.');
-}
-
-function exportBudgetCSV() {
-  let csv = '구분,항목,금액\n';
-  budgetOverseas.forEach(b => { csv += `해외봉사,"${b.name}",${b.amount}\n`; });
-  budgetDomestic.forEach(b => { csv += `국내봉사,"${b.name}",${b.amount}\n`; });
-  downloadCSV('예산_목록.csv', csv);
-  showToast('예산 CSV가 다운로드되었습니다.');
-}
-
-function exportAnnouncesCSV() {
-  let csv = '제목,내용,날짜,고정\n';
-  announces.forEach(a => {
-    csv += `"${a.title}","${a.content.replace(/\n/g,' ')}","${a.date}",${a.pinned ? 'Y' : 'N'}\n`;
-  });
-  downloadCSV('공지사항_목록.csv', csv);
-  showToast('공지사항 CSV가 다운로드되었습니다.');
-}
-
-// ============ DATA EXPORT/IMPORT ============
-function exportAllData() {
-  const data = {
-    exportDate: new Date().toISOString(),
-    participants,
-    groups,
-    schedules,
-    budgetOverseas,
-    budgetDomestic,
-    announces,
-    applications,
-    logs,
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `SHU_봉사단_백업_${new Date().toISOString().slice(0,10)}.json`;
-  link.click();
-  URL.revokeObjectURL(link.href);
-  addLog('export', '전체 데이터 JSON 내보내기');
-  showToast('전체 데이터가 내보내기되었습니다.');
-}
-
-function importAllData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (data.participants) { participants = data.participants; saveData(KEYS.participants, participants); }
-      if (data.groups) { groups = data.groups; saveData(KEYS.groups, groups); }
-      if (data.schedules) { schedules = data.schedules; saveData(KEYS.schedules, schedules); }
-      if (data.budgetOverseas) { budgetOverseas = data.budgetOverseas; saveData(KEYS.budgetOverseas, budgetOverseas); }
-      if (data.budgetDomestic) { budgetDomestic = data.budgetDomestic; saveData(KEYS.budgetDomestic, budgetDomestic); }
-      if (data.announces) { announces = data.announces; saveData(KEYS.announces, announces); }
-      if (data.applications) { applications = data.applications; saveApplications(applications); }
-      addLog('create', '데이터 가져오기 완료');
-      renderAll();
-      showToast('데이터가 성공적으로 가져오기되었습니다.');
-    } catch (err) {
-      showToast('올바른 JSON 파일이 아닙니다.');
-    }
-  };
-  reader.readAsText(file);
-  event.target.value = '';
-}
-
-function resetAllData() {
-  if (!confirm('정말 모든 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
-  if (!confirm('한 번 더 확인합니다. 모든 데이터가 기본값으로 초기화됩니다.')) return;
-
-  participants = JSON.parse(JSON.stringify(defaultParticipants));
-  groups = JSON.parse(JSON.stringify(defaultGroups));
-  schedules = JSON.parse(JSON.stringify(defaultSchedules));
-  budgetOverseas = JSON.parse(JSON.stringify(defaultBudgetOverseas));
-  budgetDomestic = JSON.parse(JSON.stringify(defaultBudgetDomestic));
-  announces = [];
-  applications = [];
-  logs = [];
-
-  saveData(KEYS.participants, participants);
-  saveData(KEYS.groups, groups);
-  saveData(KEYS.schedules, schedules);
-  saveData(KEYS.budgetOverseas, budgetOverseas);
-  saveData(KEYS.budgetDomestic, budgetDomestic);
-  saveData(KEYS.announces, announces);
-  saveApplications(applications);
-  saveData(KEYS.logs, logs);
-  localStorage.removeItem(KEYS.credentials);
-
-  renderAll();
-  showToast('모든 데이터가 초기화되었습니다.');
-}
-
-// ============ SETTINGS ============
-function toggleSetting(el) {
-  el.classList.toggle('on');
-}
-
-// ============ DASHBOARD ============
-let deptChartInstance = null;
-function updateDashboard() {
-  // Stats
-  document.getElementById('dash-total-participants').textContent = participants.length + groups.reduce((s,g)=>s+g.count,0);
-  document.getElementById('dash-total-schedules').textContent = schedules.length;
-  document.getElementById('dash-total-announces').textContent = announces.length;
-  const pendingApps = getApplications().filter(a => a.status === 'pending').length;
-  document.getElementById('dash-pending-apps').textContent = pendingApps;
-
-  // Date
-  const today = new Date();
-  const mm = today.getMonth() + 1;
-  const dd = today.getDate();
-  document.getElementById('dash-today').textContent = `${mm}월 ${dd}일`;
-
-  // D-day
-  const next = schedules
-    .filter(i => new Date(i.date) >= today)
-    .sort((a,b) => new Date(a.date) - new Date(b.date))[0];
-  if (next) {
-    const diff = Math.ceil((new Date(next.date) - today) / (1000*60*60*24));
-    document.getElementById('dash-dday').textContent = `다음: ${next.content} (D-${diff})`;
-  } else {
-    document.getElementById('dash-dday').textContent = '예정된 일정 없음';
-  }
-
-  // Progress
-  const done = schedules.filter(s => new Date(s.date) < today).length;
-  const pct = schedules.length > 0 ? Math.round((done / schedules.length) * 100) : 0;
-  document.getElementById('dash-progress-pct').textContent = pct + '%';
-  document.getElementById('dash-progress-bar').style.width = pct + '%';
-
-  // Welcome
-  document.getElementById('admin-welcome').textContent = `환영합니다, 관리자님 | ${today.toLocaleDateString('ko-KR')}`;
-
-  // Dept chart
-  const deptCount = {};
-  participants.forEach(p => { deptCount[p.dept] = (deptCount[p.dept] || 0) + 1; });
-  const deptLabels = Object.keys(deptCount);
-  const deptValues = Object.values(deptCount);
-  const deptColors = ['#3b82f6','#10b981','#8b5cf6','#f59e0b','#e94560','#06b6d4','#ec4899'];
-
-  const canvas = document.getElementById('deptChart');
-  if (deptChartInstance) deptChartInstance.destroy();
-  deptChartInstance = new Chart(canvas, {
-    type:'bar',
-    data:{
-      labels: deptLabels,
-      datasets:[{ label:'인원', data: deptValues, backgroundColor: deptColors.slice(0, deptLabels.length), borderRadius:6 }]
-    },
-    options:{
-      responsive:true,
-      plugins:{ legend:{ display:false }},
-      scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 }}}
-    }
-  });
-}
-
 // ============ APPLICATIONS ============
-function getApplications() {
-  return JSON.parse(localStorage.getItem(KEYS.applications) || '[]');
-}
-
-function saveApplications(apps) {
-  localStorage.setItem(KEYS.applications, JSON.stringify(apps));
-  applications = apps;
-}
-
 function renderApplications() {
-  applications = getApplications();
   const total = applications.length;
   const pending = applications.filter(a => a.status === 'pending').length;
   const approved = applications.filter(a => a.status === 'approved').length;
   const rejected = applications.filter(a => a.status === 'rejected').length;
-
   document.getElementById('app-stat-total').textContent = total;
   document.getElementById('app-stat-pending').textContent = pending;
   document.getElementById('app-stat-approved').textContent = approved;
@@ -1864,21 +1601,14 @@ function renderApplications() {
 
   const filtered = appFilter === 'all' ? applications : applications.filter(a => a.status === appFilter);
   document.getElementById('app-list-count').textContent = filtered.length;
-
   const empty = document.getElementById('app-empty');
   const tbody = document.getElementById('applications-body');
-
-  if (filtered.length === 0) {
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
-    return;
-  }
+  if (filtered.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
   const statusLabel = { pending:'대기', approved:'승인', rejected:'거절' };
   const statusClass = { pending:'status-pending', approved:'status-approved', rejected:'status-rejected' };
-
-  tbody.innerHTML = filtered.map((a, _) => {
+  tbody.innerHTML = filtered.map((a) => {
     const realIdx = applications.indexOf(a);
     return `
     <tr>
@@ -1912,7 +1642,6 @@ function viewApplication(idx) {
   const a = applications[idx];
   const statusLabel = { pending:'대기', approved:'승인', rejected:'거절' };
   const statusClass = { pending:'status-pending', approved:'status-approved', rejected:'status-rejected' };
-
   document.getElementById('app-detail-content').innerHTML = `
     <table style="width:100%;">
       <tbody>
@@ -1933,7 +1662,6 @@ function viewApplication(idx) {
       <div style="background:#f8fafc;border-radius:8px;padding:14px;font-size:13px;color:#555;line-height:1.7;">${(a.motivation || '').replace(/\n/g,'<br>')}</div>
     </div>
   `;
-
   let actions = '<button class="btn btn-outline" onclick="closeApplicationModal()">닫기</button>';
   if (a.status === 'pending') {
     actions = `
@@ -1945,87 +1673,285 @@ function viewApplication(idx) {
   document.getElementById('app-detail-actions').innerHTML = actions;
   document.getElementById('modal-application').classList.add('open');
 }
+function closeApplicationModal() { document.getElementById('modal-application').classList.remove('open'); }
 
-function closeApplicationModal() {
-  document.getElementById('modal-application').classList.remove('open');
-}
-
-function approveApplication(idx) {
+async function approveApplication(idx) {
   const a = applications[idx];
   if (!confirm(`"${a.name}" 신청을 승인하시겠습니까?\n참여자 목록에 자동으로 추가됩니다.`)) return;
-
-  const now = new Date();
-  const dateStr = now.getFullYear() + '-' +
-    String(now.getMonth()+1).padStart(2,'0') + '-' +
-    String(now.getDate()).padStart(2,'0') + ' ' +
-    String(now.getHours()).padStart(2,'0') + ':' +
-    String(now.getMinutes()).padStart(2,'0');
-
-  applications[idx].status = 'approved';
-  applications[idx].reviewedAt = dateStr;
-  saveApplications(applications);
+  const dateStr = nowStr();
+  await sb.from('applications').update({ status: 'approved', reviewed_at: dateStr }).eq('id', a._dbId);
 
   // Add to participants
-  const no = participants.length > 0 ? Math.max(...participants.map(p => p.no)) + 1 : 1;
-  participants.push({ no, dept: a.dept, name: a.name, id: a.studentId });
-  saveData(KEYS.participants, participants);
+  const no = participants.length > 0 ? Math.max(...participants.map(p=>p.no)) + 1 : 1;
+  await sb.from('participants').insert({ no, dept: a.dept, name: a.name, student_id: a.studentId });
 
   addLog('create', `신청 승인 → 참여자 추가: ${a.name} (${a.dept})`);
+  await Promise.all([reloadApplications(), reloadParticipants()]);
   renderApplications();
   renderParticipants();
   updateDashboard();
   showToast(`${a.name} 신청이 승인되었습니다.`);
 }
 
-function rejectApplication(idx) {
+async function rejectApplication(idx) {
   const a = applications[idx];
   if (!confirm(`"${a.name}" 신청을 거절하시겠습니까?`)) return;
-
-  const now = new Date();
-  const dateStr = now.getFullYear() + '-' +
-    String(now.getMonth()+1).padStart(2,'0') + '-' +
-    String(now.getDate()).padStart(2,'0') + ' ' +
-    String(now.getHours()).padStart(2,'0') + ':' +
-    String(now.getMinutes()).padStart(2,'0');
-
-  applications[idx].status = 'rejected';
-  applications[idx].reviewedAt = dateStr;
-  saveApplications(applications);
-
+  const dateStr = nowStr();
+  await sb.from('applications').update({ status: 'rejected', reviewed_at: dateStr }).eq('id', a._dbId);
   addLog('edit', `신청 거절: ${a.name} (${a.dept})`);
+  await reloadApplications();
   renderApplications();
   showToast(`${a.name} 신청이 거절되었습니다.`);
 }
 
+// ============ CSV EXPORT ============
+function downloadCSV(filename, csvContent) {
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csvContent], { type:'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+  addLog('export', `CSV 내보내기: ${filename}`);
+}
+
+function exportParticipantsCSV() {
+  let csv = '번호,소속,성명,학번\n';
+  participants.forEach(p => { csv += `${p.no},${p.dept},${p.name},${p.id}\n`; });
+  downloadCSV('참여자_목록.csv', csv);
+  showToast('참여자 CSV가 다운로드되었습니다.');
+}
+function exportScheduleCSV() {
+  let csv = '주차,기간,내용,상세,날짜,월\n';
+  schedules.forEach(s => { csv += `"${s.week}","${s.period}","${s.content}","${(s.detail||'').replace(/\n/g,' ')}","${s.date}",${s.month}\n`; });
+  downloadCSV('일정_목록.csv', csv);
+  showToast('일정 CSV가 다운로드되었습니다.');
+}
+function exportBudgetCSV() {
+  let csv = '구분,항목,금액\n';
+  budgetOverseas.forEach(b => { csv += `해외봉사,"${b.name}",${b.amount}\n`; });
+  budgetDomestic.forEach(b => { csv += `국내봉사,"${b.name}",${b.amount}\n`; });
+  downloadCSV('예산_목록.csv', csv);
+  showToast('예산 CSV가 다운로드되었습니다.');
+}
+function exportAnnouncesCSV() {
+  let csv = '제목,내용,날짜,고정\n';
+  announces.forEach(a => { csv += `"${a.title}","${a.content.replace(/\n/g,' ')}","${a.date}",${a.pinned ? 'Y' : 'N'}\n`; });
+  downloadCSV('공지사항_목록.csv', csv);
+  showToast('공지사항 CSV가 다운로드되었습니다.');
+}
 function exportApplicationsCSV() {
   if (applications.length === 0) { showToast('내보낼 신청 데이터가 없습니다.'); return; }
-  const statusLabel = { pending:'대기', approved:'승인', rejected:'거절' };
+  const sl = { pending:'대기', approved:'승인', rejected:'거절' };
   let csv = '이름,학번,학과,연락처,이메일,해외봉사경험,여권소지,지원동기,상태,신청일,처리일\n';
   applications.forEach(a => {
-    csv += `"${a.name}","${a.studentId}","${a.dept}","${a.phone}","${a.email || ''}","${a.overseasExp}","${a.passport}","${(a.motivation || '').replace(/\n/g,' ')}","${statusLabel[a.status]}","${a.appliedAt}","${a.reviewedAt || ''}"\n`;
+    csv += `"${a.name}","${a.studentId}","${a.dept}","${a.phone}","${a.email||''}","${a.overseasExp}","${a.passport}","${(a.motivation||'').replace(/\n/g,' ')}","${sl[a.status]}","${a.appliedAt}","${a.reviewedAt||''}"\n`;
   });
   downloadCSV('신청서_목록.csv', csv);
   showToast('신청서 CSV가 다운로드되었습니다.');
 }
 
-function copyShareUrl() {
-  const input = document.getElementById('share-url');
-  input.select();
-  document.execCommand('copy');
-  showToast('링크가 클립보드에 복사되었습니다.');
+// ============ DATA EXPORT/IMPORT ============
+function exportAllData() {
+  const data = { exportDate: new Date().toISOString(), participants, groups, schedules, budgetOverseas, budgetDomestic, announces, applications, logs };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `SHU_봉사단_백업_${todayStr()}.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+  addLog('export', '전체 데이터 JSON 내보내기');
+  showToast('전체 데이터가 내보내기되었습니다.');
 }
 
+async function importAllData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      // Clear all tables
+      await Promise.all([
+        sb.from('participants').delete().gte('id', 0),
+        sb.from('volunteer_groups').delete().gte('id', 0),
+        sb.from('schedules').delete().gte('id', 0),
+        sb.from('budget').delete().gte('id', 0),
+        sb.from('announces').delete().gte('id', 0),
+        sb.from('applications').delete().gte('id', 0),
+      ]);
+      // Insert imported data
+      if (data.participants && data.participants.length > 0) {
+        const rows = data.participants.map(p => ({ no: p.no, dept: p.dept, name: p.name, student_id: p.id }));
+        await sb.from('participants').insert(rows);
+      }
+      if (data.groups && data.groups.length > 0) {
+        const rows = data.groups.map(g => ({ no: g.no, dept: g.dept, name: g.name, member_count: g.count }));
+        await sb.from('volunteer_groups').insert(rows);
+      }
+      if (data.schedules && data.schedules.length > 0) {
+        const rows = data.schedules.map(s => ({ week: s.week, period: s.period, date: s.date, content: s.content, detail: s.detail, month: s.month }));
+        await sb.from('schedules').insert(rows);
+      }
+      if (data.budgetOverseas && data.budgetOverseas.length > 0) {
+        const rows = data.budgetOverseas.map(b => ({ category: 'overseas', name: b.name, amount: b.amount }));
+        await sb.from('budget').insert(rows);
+      }
+      if (data.budgetDomestic && data.budgetDomestic.length > 0) {
+        const rows = data.budgetDomestic.map(b => ({ category: 'domestic', name: b.name, amount: b.amount }));
+        await sb.from('budget').insert(rows);
+      }
+      if (data.announces && data.announces.length > 0) {
+        const rows = data.announces.map(a => ({ title: a.title, content: a.content, pinned: a.pinned, created_at: a.date }));
+        await sb.from('announces').insert(rows);
+      }
+      if (data.applications && data.applications.length > 0) {
+        const rows = data.applications.map(a => ({ app_id: a.id, name: a.name, student_id: a.studentId, dept: a.dept, phone: a.phone, email: a.email, motivation: a.motivation, overseas_exp: a.overseasExp, passport: a.passport, status: a.status, applied_at: a.appliedAt, reviewed_at: a.reviewedAt, review_note: a.reviewNote }));
+        await sb.from('applications').insert(rows);
+      }
+      addLog('create', '데이터 가져오기 완료');
+      await loadAllData();
+      renderAll();
+      showToast('데이터가 성공적으로 가져오기되었습니다.');
+    } catch (err) {
+      showToast('올바른 JSON 파일이 아닙니다.');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+async function resetAllData() {
+  if (!confirm('정말 모든 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+  if (!confirm('한 번 더 확인합니다. 모든 데이터가 기본값으로 초기화됩니다.')) return;
+
+  // Clear all tables
+  await Promise.all([
+    sb.from('participants').delete().gte('id', 0),
+    sb.from('volunteer_groups').delete().gte('id', 0),
+    sb.from('schedules').delete().gte('id', 0),
+    sb.from('budget').delete().gte('id', 0),
+    sb.from('announces').delete().gte('id', 0),
+    sb.from('applications').delete().gte('id', 0),
+    sb.from('logs').delete().gte('id', 0),
+  ]);
+
+  // Re-insert defaults
+  const defaultParticipants = [
+    {no:1,dept:'간호학과',name:'권우석',student_id:'202210003'},{no:2,dept:'간호학과',name:'양예원',student_id:'202310068'},
+    {no:3,dept:'간호학과',name:'이수정',student_id:'202310084'},{no:4,dept:'간호학과',name:'김예진',student_id:'202310512'},
+    {no:5,dept:'간호학과',name:'이서진',student_id:'202310523'},{no:6,dept:'간호학과',name:'권은서',student_id:'202410005'},
+    {no:7,dept:'간호학과',name:'김윤지',student_id:'202410025'},{no:8,dept:'간호학과',name:'박세영',student_id:'202410046'},
+    {no:9,dept:'간호학과',name:'서지윤',student_id:'202410062'},{no:10,dept:'간호학과',name:'이선우',student_id:'202410097'},
+    {no:11,dept:'간호학과',name:'조예지',student_id:'202410124'},{no:12,dept:'간호학과',name:'지수아',student_id:'202410132'},
+    {no:13,dept:'간호학과',name:'박윤아',student_id:'202410522'},{no:14,dept:'간호학과',name:'김도희',student_id:'202510012'},
+    {no:15,dept:'간호학과',name:'김드보라',student_id:'202510013'},{no:16,dept:'간호학과',name:'김시라',student_id:'202510020'},
+    {no:17,dept:'간호학과',name:'문지현',student_id:'202510041'},{no:18,dept:'간호학과',name:'박나은',student_id:'202510042'},
+    {no:19,dept:'간호학과',name:'양아연',student_id:'202510075'},{no:20,dept:'간호학과',name:'정민재',student_id:'202510122'},
+    {no:21,dept:'뷰티융합과',name:'김하은',student_id:'202510259'},{no:22,dept:'사회복지과',name:'전창인',student_id:'202310383'},
+    {no:23,dept:'의료정보과',name:'김나현',student_id:'202510595'},{no:24,dept:'치위생과',name:'최은서',student_id:'202310238'},
+    {no:25,dept:'치위생과',name:'허윤지',student_id:'202310240'},{no:26,dept:'치위생과',name:'김서진',student_id:'202410165'},
+    {no:27,dept:'치위생과',name:'김서현',student_id:'202410166'},{no:28,dept:'치위생과',name:'박한경',student_id:'202410187'},
+    {no:29,dept:'치위생과',name:'윤희진',student_id:'202410204'},{no:30,dept:'치위생과',name:'정민서',student_id:'202410221'},
+  ];
+  const defaultGroups = [
+    {no:1,dept:'간호학과',name:'천사랑',member_count:47},
+    {no:2,dept:'간호학과',name:'사랑나눔',member_count:44},
+    {no:3,dept:'치위생과',name:'다솜누리',member_count:41},
+  ];
+  const defaultSchedules = [
+    {week:'사전',period:'2월',date:'2026-02-01',content:'국가 선정',detail:'사회봉사운영위원회 - 국가, 인솔자수, 학생수, 예산(자부담금) 결정',month:2},
+    {week:'1)',period:'2월 23일(월)~27일(목)',date:'2026-02-23',content:'인솔자 선정(학과, 연합)',detail:'교수: 학과별 인솔교수 공문발송 및 수신\n직원: 지원모집 안내(슈톡)',month:2},
+    {week:'2)',period:'3월 3일(수)~15일(일)',date:'2026-03-03',content:'학생 모집',detail:'학과별 공문발송, 홈페이지/LMS 팝업 홍보',month:3},
+    {week:'3)',period:'3월 10일(화) 5,6교시',date:'2026-03-10',content:'채플 발표',detail:'2025 SHU Volunteer 동계 봉사대(오만,대만) 홍보\n2026-1학기 학생모집 홍보',month:3},
+    {week:'4)',period:'3월 16일(월)~20일(금)',date:'2026-03-16',content:'학생 면접',detail:'면접장소 섭외, 면접 지원',month:3},
+    {week:'5)',period:'3월 23일(월)~24일(화)',date:'2026-03-23',content:'사회봉사위원회 결의 / 입찰',detail:'인솔교수명, 학생명, 발대식 일정 결정\n소기 사이즈, 수량 사전 조사',month:3},
+    {week:'6)',period:'5월 13일(수)~15일(금)',date:'2026-05-13',content:'발대식, 안전교육',detail:'학생물품 사전조사 지원(상의)',month:5},
+    {week:'7)',period:'5월 18일(월)~22일(금)',date:'2026-05-18',content:'MISSION WEEK 봉사 활동',detail:'해외봉사 현장 활동',month:5},
+    {week:'8)',period:'13주 이후',date:'2026-06-15',content:'봉사 활동 만족도 조사',detail:'만족도 조사 실시, 안교 및 2학기 채플 발표 준비',month:6},
+  ];
+  const defaultBudget = [
+    {category:'overseas',name:'학기 중 봉사대 (6학과 x 20,000,000)',amount:120000000},
+    {category:'overseas',name:'방학 중 봉사대 (3국가 x 25,000,000)',amount:75000000},
+    {category:'overseas',name:'발대식 소모품',amount:8000000},
+    {category:'overseas',name:'운영비',amount:2000000},
+    {category:'overseas',name:'대사협 연회비',amount:1500000},
+    {category:'domestic',name:'운영비 (교통비, 식대 등)',amount:6000000},
+    {category:'domestic',name:'현수막 제작 및 소모품',amount:4000000},
+  ];
+
+  await Promise.all([
+    sb.from('participants').insert(defaultParticipants),
+    sb.from('volunteer_groups').insert(defaultGroups),
+    sb.from('schedules').insert(defaultSchedules),
+    sb.from('budget').insert(defaultBudget),
+  ]);
+
+  localStorage.removeItem(CRED_KEY);
+  await loadAllData();
+  renderAll();
+  showToast('모든 데이터가 초기화되었습니다.');
+}
+
+// ============ SETTINGS ============
+function toggleSetting(el) { el.classList.toggle('on'); }
+
+// ============ DASHBOARD ============
+let deptChartInstance = null;
+function updateDashboard() {
+  document.getElementById('dash-total-participants').textContent = participants.length + groups.reduce((s,g)=>s+g.count,0);
+  document.getElementById('dash-total-schedules').textContent = schedules.length;
+  document.getElementById('dash-total-announces').textContent = announces.length;
+  const pendingApps = applications.filter(a => a.status === 'pending').length;
+  document.getElementById('dash-pending-apps').textContent = pendingApps;
+
+  const today = new Date();
+  const mm = today.getMonth() + 1;
+  const dd = today.getDate();
+
+  const next = schedules
+    .filter(i => new Date(i.date) >= today)
+    .sort((a,b) => new Date(a.date) - new Date(b.date))[0];
+
+  const done = schedules.filter(s => new Date(s.date) < today).length;
+  const pct = schedules.length > 0 ? Math.round((done / schedules.length) * 100) : 0;
+  document.getElementById('dash-progress-pct').textContent = pct + '%';
+  document.getElementById('dash-progress-bar').style.width = pct + '%';
+
+  document.getElementById('admin-welcome').textContent = `환영합니다, 관리자님 | ${today.toLocaleDateString('ko-KR')}`;
+
+  // Dept chart
+  const deptCount = {};
+  participants.forEach(p => { deptCount[p.dept] = (deptCount[p.dept] || 0) + 1; });
+  const deptLabels = Object.keys(deptCount);
+  const deptValues = Object.values(deptCount);
+  const deptColors = ['#3b82f6','#10b981','#8b5cf6','#f59e0b','#e94560','#06b6d4','#ec4899'];
+
+  const canvas = document.getElementById('deptChart');
+  if (deptChartInstance) deptChartInstance.destroy();
+  deptChartInstance = new Chart(canvas, {
+    type:'bar',
+    data:{
+      labels: deptLabels,
+      datasets:[{ label:'인원', data: deptValues, backgroundColor: deptColors.slice(0, deptLabels.length), borderRadius:6 }]
+    },
+    options:{
+      responsive:true,
+      plugins:{ legend:{ display:false }},
+      scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 }}}
+    }
+  });
+}
+
+// ============ QR CODE ============
 function generateQRCode() {
   const container = document.getElementById('qrcode-container');
   if (!container) return;
-
-  // Determine the application form URL
   const currentPath = window.location.pathname;
   const dir = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
   const appUrl = window.location.origin + dir + '사회봉사단_신청서.html';
-
   document.getElementById('share-url').value = appUrl;
-
   container.innerHTML = '';
   try {
     var qr = qrcode(0, 'M');
@@ -2035,6 +1961,12 @@ function generateQRCode() {
   } catch(e) {
     container.innerHTML = '<div style="width:140px;height:140px;display:flex;align-items:center;justify-content:center;background:#f8fafc;border-radius:8px;font-size:12px;color:#888;">QR 생성 실패</div>';
   }
+}
+function copyShareUrl() {
+  const input = document.getElementById('share-url');
+  input.select();
+  document.execCommand('copy');
+  showToast('링크가 클립보드에 복사되었습니다.');
 }
 
 // ============ RENDER ALL ============
@@ -2051,13 +1983,13 @@ function renderAll() {
 }
 
 // ============ INIT ============
-function initAdmin() {
+async function initAdmin() {
+  await loadAllData();
   renderAll();
 }
 
-// Check session on load
-document.addEventListener('DOMContentLoaded', () => {
-  // Pre-render behind login
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadAllData();
   renderAll();
 });
 </script>
