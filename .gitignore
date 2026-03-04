@@ -1,0 +1,17 @@
+# Windows system files
+desktop.ini
+Thumbs.db
+
+# Shortcuts
+*.lnk
+
+# Backup files
+*.bak
+
+# Images (personal)
+*.jpg
+*.jpeg
+*.png
+
+# Other folders
+클로드_김경목/
