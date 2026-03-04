@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHU Volunteer 2026 - 사회봉사단</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'Noto Sans KR',sans-serif;
+  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+  min-height:100vh; display:flex; justify-content:center; align-items:center;
+  padding:20px;
+}
+
+.container {
+  max-width:480px; width:100%; text-align:center;
+}
+
+.logo {
+  font-size:48px; margin-bottom:8px;
+}
+
+h1 {
+  font-size:28px; font-weight:700; color:#e94560;
+  letter-spacing:1px; margin-bottom:6px;
+}
+
+.subtitle {
+  font-size:14px; color:rgba(255,255,255,0.6); margin-bottom:40px;
+}
+
+.card-list {
+  display:flex; flex-direction:column; gap:16px;
+}
+
+.card {
+  display:block; background:#fff; border-radius:16px;
+  padding:24px 28px; text-decoration:none; color:#1a1a2e;
+  box-shadow:0 4px 20px rgba(0,0,0,0.15);
+  transition:transform 0.2s, box-shadow 0.2s;
+  text-align:left;
+}
+
+.card:hover {
+  transform:translateY(-3px);
+  box-shadow:0 8px 30px rgba(233,69,96,0.25);
+}
+
+.card-icon {
+  font-size:28px; margin-bottom:8px;
+}
+
+.card-title {
+  font-size:17px; font-weight:600; color:#1a1a2e; margin-bottom:4px;
+}
+
+.card-desc {
+  font-size:13px; color:#666; line-height:1.5;
+}
+
+.card-arrow {
+  float:right; font-size:20px; color:#e94560; margin-top:-30px;
+}
+
+.footer {
+  margin-top:40px; font-size:11px; color:rgba(255,255,255,0.35);
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo">🤝</div>
+  <h1>SHU Volunteer 2026</h1>
+  <p class="subtitle">삼육대학교 사회봉사단 관리 시스템</p>
+
+  <div class="card-list">
+    <a class="card" href="사회봉사단.html">
+      <div class="card-icon">📊</div>
+      <div class="card-title">사회봉사단 대시보드</div>
+      <div class="card-desc">봉사단 현황, 통계, 일정을 한눈에 확인합니다.</div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a class="card" href="사회봉사단_신청서.html">
+      <div class="card-icon">📝</div>
+      <div class="card-title">참여 신청서</div>
+      <div class="card-desc">사회봉사단 참여를 신청합니다.</div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a class="card" href="사회봉사단_관리자.html">
+      <div class="card-icon">⚙️</div>
+      <div class="card-title">관리자 페이지</div>
+      <div class="card-desc">신청 현황 관리, 데이터 조회 및 통계를 확인합니다.</div>
+      <div class="card-arrow">→</div>
+    </a>
+  </div>
+
+  <p class="footer">© 2026 삼육대학교 사회봉사단</p>
+</div>
+
+</body>
+</html>
