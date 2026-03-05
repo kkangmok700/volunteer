@@ -180,6 +180,18 @@ body {
         </select>
         <div class="field-error" id="err-dept">학과를 선택해주세요.</div>
       </div>
+
+      <div class="form-group">
+        <label>학년 <span class="required">*</span></label>
+        <select class="form-select" id="app-grade">
+          <option value="">학년을 선택해주세요</option>
+          <option value="1학년">1학년</option>
+          <option value="2학년">2학년</option>
+          <option value="3학년">3학년</option>
+          <option value="4학년">4학년</option>
+        </select>
+        <div class="field-error" id="err-grade">학년을 선택해주세요.</div>
+      </div>
       <div class="form-group">
         <label>참가국 <span class="required">*</span></label>
         <select class="form-select" id="app-country">
@@ -268,6 +280,7 @@ async function submitApplication() {
   const name = document.getElementById('app-name').value.trim();
   const studentId = document.getElementById('app-studentId').value.trim();
   const dept = document.getElementById('app-dept').value;
+  const grade = document.getElementById('app-grade').value;
   const country = document.getElementById('app-country').value;
   const phone = document.getElementById('app-phone').value.trim();
   const email = document.getElementById('app-email').value.trim();
@@ -281,6 +294,7 @@ async function submitApplication() {
   if (!name) { document.getElementById('err-name').style.display = 'block'; valid = false; }
   if (!studentId) { document.getElementById('err-studentId').style.display = 'block'; valid = false; }
   if (!dept) { document.getElementById('err-dept').style.display = 'block'; valid = false; }
+  if (!grade) { document.getElementById('err-grade').style.display = 'block'; valid = false; }
   if (!country) { document.getElementById('err-country').style.display = 'block'; valid = false; }
   if (!phone) { document.getElementById('err-phone').style.display = 'block'; valid = false; }
   if (!motivation) { document.getElementById('err-motivation').style.display = 'block'; valid = false; }
@@ -305,6 +319,7 @@ async function submitApplication() {
     name,
     student_id: studentId,
     dept,
+    grade,
     country,
     phone,
     email,
@@ -330,6 +345,7 @@ async function submitApplication() {
     '<strong>신청자:</strong> ' + name + '<br>' +
     '<strong>학번:</strong> ' + studentId + '<br>' +
     '<strong>학과:</strong> ' + dept + '<br>' +
+    '<strong>학년:</strong> ' + grade + '<br>' +
     '<strong>참가국:</strong> ' + country + '<br>' +
     '<strong>연락처:</strong> ' + phone + '<br>' +
     '<strong>신청일시:</strong> ' + dateStr;
@@ -341,6 +357,7 @@ function resetForm() {
   document.getElementById('app-name').value = '';
   document.getElementById('app-studentId').value = '';
   document.getElementById('app-dept').value = '';
+  document.getElementById('app-grade').value = '';
   document.getElementById('app-country').value = '';
   document.getElementById('app-phone').value = '';
   document.getElementById('app-email').value = '';
