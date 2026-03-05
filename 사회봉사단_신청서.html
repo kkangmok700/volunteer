@@ -182,6 +182,19 @@ body {
       </div>
 
       <div class="form-group">
+        <label>성별 <span class="required">*</span></label>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="radio" name="gender" value="남"> 남
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="gender" value="여"> 여
+          </label>
+        </div>
+        <div class="field-error" id="err-gender">성별을 선택해주세요.</div>
+      </div>
+
+      <div class="form-group">
         <label>학년 <span class="required">*</span></label>
         <select class="form-select" id="app-grade">
           <option value="">학년을 선택해주세요</option>
@@ -284,6 +297,8 @@ async function submitApplication() {
   const country = document.getElementById('app-country').value;
   const phone = document.getElementById('app-phone').value.trim();
   const email = document.getElementById('app-email').value.trim();
+  const genderEl = document.querySelector('input[name="gender"]:checked');
+  const gender = genderEl ? genderEl.value : '';
   const motivation = document.getElementById('app-motivation').value.trim();
   const overseasExp = document.querySelector('input[name="overseas-exp"]:checked').value;
   const passport = document.querySelector('input[name="passport"]:checked').value;
@@ -297,6 +312,7 @@ async function submitApplication() {
   if (!grade) { document.getElementById('err-grade').style.display = 'block'; valid = false; }
   if (!country) { document.getElementById('err-country').style.display = 'block'; valid = false; }
   if (!phone) { document.getElementById('err-phone').style.display = 'block'; valid = false; }
+  if (!gender) { document.getElementById('err-gender').style.display = 'block'; valid = false; }
   if (!motivation) { document.getElementById('err-motivation').style.display = 'block'; valid = false; }
 
   if (!valid) return;
@@ -320,6 +336,7 @@ async function submitApplication() {
     student_id: studentId,
     dept,
     grade,
+    gender,
     country,
     phone,
     email,
@@ -346,6 +363,7 @@ async function submitApplication() {
     '<strong>학번:</strong> ' + studentId + '<br>' +
     '<strong>학과:</strong> ' + dept + '<br>' +
     '<strong>학년:</strong> ' + grade + '<br>' +
+    '<strong>성별:</strong> ' + gender + '<br>' +
     '<strong>참가국:</strong> ' + country + '<br>' +
     '<strong>연락처:</strong> ' + phone + '<br>' +
     '<strong>신청일시:</strong> ' + dateStr;
