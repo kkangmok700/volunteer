@@ -487,6 +487,14 @@ tr:hover td { background:#f8fafc; }
 
   <div class="panel">
     <div class="panel-header">
+      <span class="panel-title">나라별 지원 현황</span>
+      <span class="panel-badge badge-purple">국가별 통계</span>
+    </div>
+    <div class="stats-grid" id="country-stats-grid" style="margin-bottom:0;"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
       <span class="panel-title">신청 목록 (<span id="app-list-count">0</span>건)</span>
       <div class="btn-group">
         <button class="btn btn-sm btn-outline app-filter-btn active" onclick="filterApplications('all',this)">전체</button>
@@ -1446,6 +1454,33 @@ function renderApplications() {
   document.getElementById('app-stat-pending').textContent = pending;
   document.getElementById('app-stat-approved').textContent = approved;
   document.getElementById('app-stat-rejected').textContent = rejected;
+
+  // Country stats
+  const countries = ['라오스','대만','인도네시아','베트남'];
+  const countryColors = {'라오스':'#10b981','대만':'#3b82f6','인도네시아':'#f59e0b','베트남':'#8b5cf6'};
+  const countryFlags = {'라오스':'🇱🇦','대만':'🇹🇼','인도네시아':'🇮🇩','베트남':'🇻🇳'};
+  const cGrid = document.getElementById('country-stats-grid');
+  if (cGrid) {
+    cGrid.innerHTML = countries.map(c => {
+      const cApps = applications.filter(a => a.country === c);
+      const cTotal = cApps.length;
+      const cPending = cApps.filter(a => a.status === 'pending').length;
+      const cApproved = cApps.filter(a => a.status === 'approved').length;
+      const cRejected = cApps.filter(a => a.status === 'rejected').length;
+      return '<div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:3px solid ' + countryColors[c] + ';">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
+          '<span style="font-size:24px;">' + countryFlags[c] + '</span>' +
+          '<span style="font-size:15px;font-weight:600;">' + c + '</span>' +
+          '<span style="margin-left:auto;font-size:22px;font-weight:700;color:' + countryColors[c] + ';">' + cTotal + '</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;font-size:11px;">' +
+          '<span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:10px;">대기 ' + cPending + '</span>' +
+          '<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:10px;">승인 ' + cApproved + '</span>' +
+          '<span style="background:#fef2f2;color:#ef4444;padding:2px 8px;border-radius:10px;">거절 ' + cRejected + '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
 
   const filtered = appFilter === 'all' ? applications : applications.filter(a => a.status === appFilter);
   document.getElementById('app-list-count').textContent = filtered.length;
