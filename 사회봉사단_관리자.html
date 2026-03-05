@@ -321,9 +321,6 @@ tr:hover td { background:#f8fafc; }
       <span class="icon">📝</span> 신청서 관리
     </div>
     <div class="nav-divider"></div>
-    <div class="nav-item" onclick="showSection('logs',this)">
-      <span class="icon">📋</span> 활동 로그
-    </div>
     <div class="nav-item" onclick="showSection('export',this)">
       <span class="icon">📦</span> 데이터 관리
     </div>
@@ -372,14 +369,6 @@ tr:hover td { background:#f8fafc; }
       <div class="stat-value" id="dash-pending-apps">0</div>
       <div class="stat-sub">검토 대기중</div>
     </div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-header">
-      <span class="panel-title">최근 활동 로그</span>
-      <span class="panel-badge badge-purple">최근 5건</span>
-    </div>
-    <div id="dash-recent-logs"></div>
   </div>
 
   <div class="panel">
@@ -511,26 +500,6 @@ tr:hover td { background:#f8fafc; }
       <tbody id="applications-body"></tbody>
     </table>
     <p id="app-empty" style="font-size:13px;color:#aaa;text-align:center;padding:24px;display:none;">신청 내역이 없습니다.</p>
-  </div>
-</div>
-
-<!-- ==================== 활동 로그 ==================== -->
-<div class="section" id="sec-logs">
-  <div class="page-header">
-    <div>
-      <h2>활동 로그</h2>
-      <p>관리자 활동 기록</p>
-    </div>
-    <button class="btn btn-outline" onclick="clearLogs()">로그 초기화</button>
-  </div>
-
-  <div class="panel">
-    <div class="panel-header">
-      <span class="panel-title">전체 활동 로그</span>
-      <span class="panel-badge badge-blue" id="log-count-badge">0건</span>
-    </div>
-    <div id="logs-container"></div>
-    <p id="logs-empty" style="font-size:13px;color:#aaa;text-align:center;padding:24px;display:none;">활동 로그가 없습니다.</p>
   </div>
 </div>
 
