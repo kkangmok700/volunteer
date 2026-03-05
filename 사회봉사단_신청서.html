@@ -79,6 +79,20 @@ body {
   accent-color:#e94560; width:16px; height:16px;
 }
 
+/* Privacy consent */
+.privacy-box {
+  background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:10px;
+  padding:14px 16px; max-height:150px; overflow-y:auto;
+  font-size:12px; color:#555; line-height:1.8; margin-bottom:12px;
+}
+.privacy-box h4 { font-size:13px; color:#1a1a2e; margin-bottom:8px; font-weight:600; }
+.checkbox-item {
+  display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; font-weight:500;
+}
+.checkbox-item input[type="checkbox"] {
+  accent-color:#e94560; width:18px; height:18px;
+}
+
 /* Divider */
 .form-divider {
   height:1px; background:#f1f5f9; margin:20px 0;
@@ -262,6 +276,22 @@ body {
 
       <div class="form-divider"></div>
 
+      <div class="form-group">
+        <label>개인정보 수집 및 이용 동의 <span class="required">*</span></label>
+        <div class="privacy-box">
+          <h4>개인정보 수집 및 이용 안내</h4>
+          1. <strong>수집 목적:</strong> 사회봉사단 참여 신청 접수 및 활동 관리<br>
+          2. <strong>수집 항목:</strong> 성명, 학번, 학과, 학년, 성별, 연락처, 이메일<br>
+          3. <strong>보유 기간:</strong> 봉사활동 종료 후 1년간 보유 후 파기<br>
+          4. <strong>제3자 제공:</strong> 봉사활동 관련 기관에 필요 시 제공될 수 있음<br>
+          5. <strong>동의 거부 권리:</strong> 동의를 거부할 수 있으며, 거부 시 신청이 제한됩니다.
+        </div>
+        <label class="checkbox-item">
+          <input type="checkbox" id="app-privacy"> 위 개인정보 수집 및 이용에 동의합니다.
+        </label>
+        <div class="field-error" id="err-privacy">개인정보 수집 및 이용에 동의해주세요.</div>
+      </div>
+
       <button class="submit-btn" id="submitBtn" onclick="submitApplication()">신청서 제출</button>
     </div>
 
@@ -313,6 +343,8 @@ async function submitApplication() {
   if (!country) { document.getElementById('err-country').style.display = 'block'; valid = false; }
   if (!phone) { document.getElementById('err-phone').style.display = 'block'; valid = false; }
   if (!gender) { document.getElementById('err-gender').style.display = 'block'; valid = false; }
+  const privacy = document.getElementById('app-privacy').checked;
+  if (!privacy) { document.getElementById('err-privacy').style.display = 'block'; valid = false; }
   if (!motivation) { document.getElementById('err-motivation').style.display = 'block'; valid = false; }
 
   if (!valid) return;
@@ -381,6 +413,7 @@ function resetForm() {
   document.getElementById('app-email').value = '';
   document.getElementById('app-motivation').value = '';
   document.querySelector('input[name="overseas-exp"][value="없음"]').checked = true;
+  document.getElementById('app-privacy').checked = false;
   document.querySelector('input[name="passport"][value="미소지"]').checked = true;
   document.querySelectorAll('.field-error').forEach(e => e.style.display = 'none');
 }
