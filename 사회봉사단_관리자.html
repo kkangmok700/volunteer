@@ -1745,19 +1745,12 @@ function toggleSetting(el) { el.classList.toggle('on'); }
 // ============ DASHBOARD ============
 let deptChartInstance = null;
 function updateDashboard() {
-  document.getElementById('dash-total-participants').textContent = participants.length + groups.reduce((s,g)=>s+g.count,0);
   document.getElementById('dash-total-schedules').textContent = schedules.length;
   document.getElementById('dash-total-announces').textContent = announces.length;
   const pendingApps = applications.filter(a => a.status === 'pending').length;
   document.getElementById('dash-pending-apps').textContent = pendingApps;
 
   const today = new Date();
-  const mm = today.getMonth() + 1;
-  const dd = today.getDate();
-
-  const next = schedules
-    .filter(i => new Date(i.date) >= today)
-    .sort((a,b) => new Date(a.date) - new Date(b.date))[0];
 
   const done = schedules.filter(s => new Date(s.date) < today).length;
   const pct = schedules.length > 0 ? Math.round((done / schedules.length) * 100) : 0;
@@ -1765,28 +1758,6 @@ function updateDashboard() {
   document.getElementById('dash-progress-bar').style.width = pct + '%';
 
   document.getElementById('admin-welcome').textContent = `환영합니다, 관리자님 | ${today.toLocaleDateString('ko-KR')}`;
-
-  // Dept chart
-  const deptCount = {};
-  participants.forEach(p => { deptCount[p.dept] = (deptCount[p.dept] || 0) + 1; });
-  const deptLabels = Object.keys(deptCount);
-  const deptValues = Object.values(deptCount);
-  const deptColors = ['#3b82f6','#10b981','#8b5cf6','#f59e0b','#e94560','#06b6d4','#ec4899'];
-
-  const canvas = document.getElementById('deptChart');
-  if (deptChartInstance) deptChartInstance.destroy();
-  deptChartInstance = new Chart(canvas, {
-    type:'bar',
-    data:{
-      labels: deptLabels,
-      datasets:[{ label:'인원', data: deptValues, backgroundColor: deptColors.slice(0, deptLabels.length), borderRadius:6 }]
-    },
-    options:{
-      responsive:true,
-      plugins:{ legend:{ display:false }},
-      scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 }}}
-    }
-  });
 }
 
 // ============ QR CODE ============
@@ -1814,13 +1785,9 @@ function copyShareUrl() {
 
 // ============ RENDER ALL ============
 function renderAll() {
-  renderParticipants();
-  renderGroups();
   renderSchedules();
-  renderBudget();
   renderAnnounces();
   renderApplications();
-  renderLogs();
   updateDashboard();
   generateQRCode();
 }
