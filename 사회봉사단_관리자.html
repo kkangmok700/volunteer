@@ -314,9 +314,6 @@ tr:hover td { background:#f8fafc; }
     <div class="nav-item" onclick="showSection('schedule',this)">
       <span class="icon">📅</span> 일정 관리
     </div>
-    <div class="nav-item" onclick="showSection('budget',this)">
-      <span class="icon">💰</span> 예산 관리
-    </div>
     <div class="nav-item" onclick="showSection('announce',this)">
       <span class="icon">📢</span> 공지사항 관리
     </div>
@@ -422,65 +419,6 @@ tr:hover td { background:#f8fafc; }
       </thead>
       <tbody id="schedule-body"></tbody>
     </table>
-  </div>
-</div>
-
-<!-- ==================== 예산 관리 ==================== -->
-<div class="section" id="sec-budget">
-  <div class="page-header">
-    <div>
-      <h2>예산 관리</h2>
-      <p>예산 항목 수정 및 관리</p>
-    </div>
-    <button class="btn btn-primary" onclick="openBudgetModal()">+ 예산 항목 추가</button>
-  </div>
-
-  <div class="stats-grid">
-    <div class="stat-card blue">
-      <div class="stat-label">총 예산</div>
-      <div class="stat-value" id="budget-total">0</div>
-      <div class="stat-sub">원</div>
-    </div>
-    <div class="stat-card green">
-      <div class="stat-label">해외봉사 예산</div>
-      <div class="stat-value" id="budget-overseas">0</div>
-      <div class="stat-sub">원</div>
-    </div>
-    <div class="stat-card purple">
-      <div class="stat-label">국내봉사 예산</div>
-      <div class="stat-value" id="budget-domestic">0</div>
-      <div class="stat-sub">원</div>
-    </div>
-  </div>
-
-  <div class="grid-2">
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">해외봉사 예산 항목</span>
-      </div>
-      <table>
-        <thead><tr><th>항목</th><th>금액</th><th>관리</th></tr></thead>
-        <tbody id="budget-overseas-body"></tbody>
-      </table>
-    </div>
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">국내봉사 예산 항목</span>
-      </div>
-      <table>
-        <thead><tr><th>항목</th><th>금액</th><th>관리</th></tr></thead>
-        <tbody id="budget-domestic-body"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-header">
-      <span class="panel-title">예산 비율 차트</span>
-    </div>
-    <div style="max-width:500px;margin:0 auto;">
-      <canvas id="budgetChart"></canvas>
-    </div>
   </div>
 </div>
 
