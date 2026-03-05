@@ -494,7 +494,7 @@ tr:hover td { background:#f8fafc; }
     </div>
     <table>
       <thead>
-        <tr><th>이름</th><th>학과</th><th>학번</th><th>연락처</th><th>상태</th><th>신청일</th><th>관리</th></tr>
+        <tr><th>이름</th><th>학과</th><th>학년</th><th>참가국</th><th>학번</th><th>연락처</th><th>상태</th><th>신청일</th><th>관리</th></tr>
       </thead>
       <tbody id="applications-body"></tbody>
     </table>
@@ -849,7 +849,7 @@ async function reloadAnnounces() {
 }
 async function reloadApplications() {
   const { data } = await sb.from('applications').select('*').order('id');
-  applications = (data || []).map(a => ({ _dbId: a.id, id: a.app_id, name: a.name, studentId: a.student_id, dept: a.dept, phone: a.phone || '', email: a.email || '', motivation: a.motivation || '', overseasExp: a.overseas_exp || '', passport: a.passport || '', status: a.status, appliedAt: a.applied_at, reviewedAt: a.reviewed_at, reviewNote: a.review_note || '' }));
+  applications = (data || []).map(a => ({ _dbId: a.id, id: a.app_id, name: a.name, studentId: a.student_id, dept: a.dept, grade: a.grade || '', country: a.country || '', phone: a.phone || '', email: a.email || '', motivation: a.motivation || '', overseasExp: a.overseas_exp || '', passport: a.passport || '', status: a.status, appliedAt: a.applied_at, reviewedAt: a.reviewed_at, reviewNote: a.review_note || '' }));
 }
 async function reloadLogs() {
   const { data } = await sb.from('logs').select('*').order('id', { ascending: false }).limit(200);
@@ -1459,6 +1459,8 @@ function renderApplications() {
     <tr>
       <td>${a.name}</td>
       <td>${a.dept}</td>
+      <td>${a.grade}</td>
+      <td>${a.country}</td>
       <td>${a.studentId}</td>
       <td>${a.phone}</td>
       <td><span class="status ${statusClass[a.status]}">${statusLabel[a.status]}</span></td>
@@ -1493,6 +1495,8 @@ function viewApplication(idx) {
         <tr><td style="font-weight:600;width:120px;padding:8px 12px;">성명</td><td style="padding:8px 12px;">${a.name}</td></tr>
         <tr><td style="font-weight:600;padding:8px 12px;">학번</td><td style="padding:8px 12px;">${a.studentId}</td></tr>
         <tr><td style="font-weight:600;padding:8px 12px;">학과</td><td style="padding:8px 12px;">${a.dept}</td></tr>
+        <tr><td style="font-weight:600;padding:8px 12px;">학년</td><td style="padding:8px 12px;">${a.grade || "-"}</td></tr>
+        <tr><td style="font-weight:600;padding:8px 12px;">참가국</td><td style="padding:8px 12px;">${a.country || "-"}</td></tr>
         <tr><td style="font-weight:600;padding:8px 12px;">연락처</td><td style="padding:8px 12px;">${a.phone}</td></tr>
         <tr><td style="font-weight:600;padding:8px 12px;">이메일</td><td style="padding:8px 12px;">${a.email || '-'}</td></tr>
         <tr><td style="font-weight:600;padding:8px 12px;">해외봉사 경험</td><td style="padding:8px 12px;">${a.overseasExp}</td></tr>
@@ -1652,7 +1656,7 @@ async function importAllData(event) {
         await sb.from('announces').insert(rows);
       }
       if (data.applications && data.applications.length > 0) {
-        const rows = data.applications.map(a => ({ app_id: a.id, name: a.name, student_id: a.studentId, dept: a.dept, phone: a.phone, email: a.email, motivation: a.motivation, overseas_exp: a.overseasExp, passport: a.passport, status: a.status, applied_at: a.appliedAt, reviewed_at: a.reviewedAt, review_note: a.reviewNote }));
+        const rows = data.applications.map(a => ({ app_id: a.id, name: a.name, student_id: a.studentId, dept: a.dept, grade: a.grade || '', country: a.country || '', phone: a.phone, email: a.email, motivation: a.motivation, overseas_exp: a.overseasExp, passport: a.passport, status: a.status, applied_at: a.appliedAt, reviewed_at: a.reviewedAt, review_note: a.reviewNote }));
         await sb.from('applications').insert(rows);
       }
       addLog('create', '데이터 가져오기 완료');
