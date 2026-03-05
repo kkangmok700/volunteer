@@ -494,7 +494,7 @@ tr:hover td { background:#f8fafc; }
     </div>
     <table>
       <thead>
-        <tr><th>이름</th><th>성별</th><th>학과</th><th>학년</th><th>참가국</th><th>학번</th><th>연락처</th><th>상태</th><th>신청일</th><th>관리</th></tr>
+        <tr><th>이름</th><th>성별</th><th>학과</th><th>학년</th><th>참가국</th><th>학번</th><th>연락처</th><th>개인정보동의</th><th>상태</th><th>신청일</th><th>관리</th></tr>
       </thead>
       <tbody id="applications-body"></tbody>
     </table>
@@ -849,7 +849,7 @@ async function reloadAnnounces() {
 }
 async function reloadApplications() {
   const { data } = await sb.from('applications').select('*').order('id');
-  applications = (data || []).map(a => ({ _dbId: a.id, id: a.app_id, name: a.name, studentId: a.student_id, dept: a.dept, grade: a.grade || '', gender: a.gender || '', country: a.country || '', phone: a.phone || '', email: a.email || '', motivation: a.motivation || '', overseasExp: a.overseas_exp || '', passport: a.passport || '', status: a.status, appliedAt: a.applied_at, reviewedAt: a.reviewed_at, reviewNote: a.review_note || '' }));
+  applications = (data || []).map(a => ({ _dbId: a.id, id: a.app_id, name: a.name, studentId: a.student_id, dept: a.dept, grade: a.grade || '', gender: a.gender || '', country: a.country || '', phone: a.phone || '', email: a.email || '', motivation: a.motivation || '', overseasExp: a.overseas_exp || '', passport: a.passport || '', privacyAgreed: a.privacy_agreed || '', status: a.status, appliedAt: a.applied_at, reviewedAt: a.reviewed_at, reviewNote: a.review_note || '' }));
 }
 async function reloadLogs() {
   const { data } = await sb.from('logs').select('*').order('id', { ascending: false }).limit(200);
@@ -1464,6 +1464,7 @@ function renderApplications() {
       <td>${a.country}</td>
       <td>${a.studentId}</td>
       <td>${a.phone}</td>
+      <td>${a.privacyAgreed || '-'}</td>
       <td><span class="status ${statusClass[a.status]}">${statusLabel[a.status]}</span></td>
       <td style="font-size:12px;color:#888;">${a.appliedAt}</td>
       <td>
@@ -1501,6 +1502,7 @@ function viewApplication(idx) {
         <tr><td style="font-weight:600;padding:8px 12px;">참가국</td><td style="padding:8px 12px;">${a.country || "-"}</td></tr>
         <tr><td style="font-weight:600;padding:8px 12px;">연락처</td><td style="padding:8px 12px;">${a.phone}</td></tr>
         <tr><td style="font-weight:600;padding:8px 12px;">이메일</td><td style="padding:8px 12px;">${a.email || '-'}</td></tr>
+        <tr><td style="font-weight:600;padding:8px 12px;">개인정보동의</td><td style="padding:8px 12px;">${a.privacyAgreed || "-"}</td></tr>
         <tr><td style="font-weight:600;padding:8px 12px;">해외봉사 경험</td><td style="padding:8px 12px;">${a.overseasExp}</td></tr>
         <tr><td style="font-weight:600;padding:8px 12px;">여권 소지</td><td style="padding:8px 12px;">${a.passport}</td></tr>
         <tr><td style="font-weight:600;padding:8px 12px;">상태</td><td style="padding:8px 12px;"><span class="status ${statusClass[a.status]}">${statusLabel[a.status]}</span></td></tr>

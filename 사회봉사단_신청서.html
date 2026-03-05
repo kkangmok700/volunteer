@@ -375,6 +375,7 @@ async function submitApplication() {
     motivation,
     overseas_exp: overseasExp,
     passport,
+    privacy_agreed: privacy ? '동의' : '미동의',
     status: 'pending',
     applied_at: dateStr
   });
