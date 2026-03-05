@@ -1801,7 +1801,7 @@ function generateQRCode() {
   container.innerHTML = '';
   try {
     var qr = qrcode(0, 'M');
-    qr.addData(appUrl);
+    qr.addData(encodeURI(decodeURIComponent(appUrl)));
     qr.make();
     container.innerHTML = qr.createSvgTag(5, 0);
   } catch(e) {
