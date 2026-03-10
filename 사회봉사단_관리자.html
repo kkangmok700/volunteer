@@ -298,7 +298,7 @@ tr:hover td { background:#f8fafc; }
     <input type="password" class="login-input" id="loginPw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">로그인</button>
     <p class="login-error" id="loginError">아이디 또는 비밀번호가 올바르지 않습니다.</p>
-    <p style="font-size:11px;color:#aaa;margin-top:16px;">기본 ID: admin / PW: shu2026</p>
+    
   </div>
 </div>
 
@@ -885,7 +885,7 @@ function formatNumber(n) { return n.toLocaleString('ko-KR'); }
 const CRED_KEY = 'shu_admin_credentials';
 function getCredentials() {
   const saved = localStorage.getItem(CRED_KEY);
-  return saved ? JSON.parse(saved) : { id:'admin', pw:'shu2026' };
+  return saved ? JSON.parse(saved) : { id:'admin', pw:'vol2026' };
 }
 function doLogin() {
   const id = document.getElementById('loginId').value;
