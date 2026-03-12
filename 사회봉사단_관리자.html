@@ -440,8 +440,6 @@ tr:hover td { background:#f8fafc; }
       <p>참여 신청서 접수 현황 및 관리</p>
     </div>
     <div class="btn-group">
-      <button class="btn btn-outline" onclick="printAllApplications()">전체 인쇄</button>
-      <button class="btn btn-outline" onclick="printByDept()">학과별 인쇄</button>
       <button class="btn btn-outline" onclick="exportApplicationsCSV()">CSV 내보내기</button>
     </div>
   </div>
@@ -504,6 +502,8 @@ tr:hover td { background:#f8fafc; }
         <button class="btn btn-sm btn-outline app-filter-btn" onclick="filterApplications('approved',this)">승인</button>
         <button class="btn btn-sm btn-outline app-filter-btn" onclick="filterApplications('rejected',this)">거절</button>
         <button class="btn btn-sm btn-primary" id="dept-view-btn" onclick="toggleDeptView()" style="margin-left:8px;">학과별 보기</button>
+        <button class="btn btn-sm btn-outline" onclick="printAllApplications()" style="margin-left:4px;">전체 인쇄</button>
+        <button class="btn btn-sm btn-outline" onclick="printByDept()" style="margin-left:4px;">학과별 인쇄</button>
       </div>
     </div>
     <!-- 일반 보기 -->
