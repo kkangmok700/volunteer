@@ -483,6 +483,20 @@ tr:hover td { background:#f8fafc; }
       <div class="stat-value" id="app-stat-rejected">0</div>
       <div class="stat-sub">거절 처리</div>
     </div>
+    <div class="stat-card" id="dup-stat-card" style="border-top:3px solid #dc2626;display:none;cursor:pointer;" onclick="scrollToDupPanel()">
+      <div class="stat-label" style="color:#dc2626;">중복 신청</div>
+      <div class="stat-value" style="color:#dc2626;" id="app-stat-dup">0</div>
+      <div class="stat-sub">학번 중복 감지</div>
+    </div>
+  </div>
+
+  <!-- 중복 신청자 알림 패널 -->
+  <div class="panel" id="dup-alert-panel" style="display:none;border:2px solid #fca5a5;">
+    <div class="panel-header">
+      <span class="panel-title" style="color:#dc2626;">중복 신청 감지</span>
+      <span class="panel-badge" style="background:#fef2f2;color:#dc2626;">동일 학번 중복</span>
+    </div>
+    <div id="dup-alert-content"></div>
   </div>
 
   <div class="panel">
@@ -1497,20 +1511,72 @@ function renderApplications() {
   if (filtered.length === 0) { tbody.innerHTML = ''; if (deptViewMode) document.getElementById('app-dept-view').innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
+  // 중복 학번 감지 (전체 applications 기준)
+  const idCount = {};
+  applications.forEach(a => {
+    const sid = (a.studentId || '').trim();
+    if (sid) idCount[sid] = (idCount[sid] || 0) + 1;
+  });
+  const dupIds = new Set(Object.keys(idCount).filter(k => idCount[k] > 1));
+
+  // 중복 통계 카드 업데이트
+  const dupCard = document.getElementById('dup-stat-card');
+  const dupPanel = document.getElementById('dup-alert-panel');
+  if (dupIds.size > 0) {
+    const dupStudents = applications.filter(a => dupIds.has((a.studentId || '').trim()));
+    document.getElementById('app-stat-dup').textContent = dupIds.size;
+    dupCard.style.display = '';
+
+    // 중복 알림 패널 내용
+    const dupGroups = {};
+    dupStudents.forEach(a => {
+      const sid = (a.studentId || '').trim();
+      if (!dupGroups[sid]) dupGroups[sid] = [];
+      dupGroups[sid].push(a);
+    });
+    const statusLabel2 = { pending:'대기', approved:'승인', rejected:'거절' };
+    dupPanel.style.display = '';
+    document.getElementById('dup-alert-content').innerHTML = Object.keys(dupGroups).map(sid => {
+      const group = dupGroups[sid];
+      return `
+      <div style="background:#fef2f2;border-radius:8px;padding:14px;margin:10px 0;">
+        <div style="font-weight:700;color:#dc2626;margin-bottom:8px;">학번: ${sid} (${group.length}회 신청)</div>
+        <table style="width:100%;margin:0;">
+          <thead><tr><th>이름</th><th>학과</th><th>참가국</th><th>상태</th><th>신청일</th><th>관리</th></tr></thead>
+          <tbody>${group.map(a => {
+            const realIdx = applications.indexOf(a);
+            return `<tr>
+              <td>${a.name}</td>
+              <td>${a.dept}</td>
+              <td>${a.country || '-'}</td>
+              <td>${statusLabel2[a.status] || a.status}</td>
+              <td style="font-size:12px;">${a.appliedAt}</td>
+              <td><button class="btn btn-outline btn-sm" onclick="viewApplication(${realIdx})">상세</button></td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>`;
+    }).join('');
+  } else {
+    dupCard.style.display = 'none';
+    dupPanel.style.display = 'none';
+  }
+
   if (deptViewMode) { renderDeptView(filtered); return; }
 
   const statusLabel = { pending:'대기', approved:'승인', rejected:'거절' };
   const statusClass = { pending:'status-pending', approved:'status-approved', rejected:'status-rejected' };
   tbody.innerHTML = filtered.map((a) => {
     const realIdx = applications.indexOf(a);
+    const isDup = dupIds.has((a.studentId || '').trim());
     return `
-    <tr>
-      <td>${a.name}</td>
+    <tr style="${isDup ? 'background:#fef2f2;' : ''}">
+      <td>${a.name}${isDup ? ' <span style="color:#dc2626;font-size:11px;font-weight:700;" title="중복 신청">중복</span>' : ''}</td>
       <td>${a.gender || '-'}</td>
       <td>${a.dept}</td>
       <td>${a.grade}</td>
       <td>${a.country}</td>
-      <td>${a.studentId}</td>
+      <td style="${isDup ? 'color:#dc2626;font-weight:700;' : ''}">${a.studentId}</td>
       <td>${a.phone}</td>
       <td>${a.privacyAgreed || '-'}</td>
       <td><span class="status ${statusClass[a.status]}">${statusLabel[a.status]}</span></td>
@@ -1526,6 +1592,10 @@ function renderApplications() {
       </td>
     </tr>
   `}).join('');
+}
+
+function scrollToDupPanel() {
+  document.getElementById('dup-alert-panel').scrollIntoView({ behavior:'smooth' });
 }
 
 let deptViewMode = false;
