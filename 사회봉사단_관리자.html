@@ -501,14 +501,20 @@ tr:hover td { background:#f8fafc; }
         <button class="btn btn-sm btn-outline app-filter-btn" onclick="filterApplications('pending',this)">대기</button>
         <button class="btn btn-sm btn-outline app-filter-btn" onclick="filterApplications('approved',this)">승인</button>
         <button class="btn btn-sm btn-outline app-filter-btn" onclick="filterApplications('rejected',this)">거절</button>
+        <button class="btn btn-sm btn-primary" id="dept-view-btn" onclick="toggleDeptView()" style="margin-left:8px;">학과별 보기</button>
       </div>
     </div>
-    <table>
-      <thead>
-        <tr><th>이름</th><th>성별</th><th>학과</th><th>학년</th><th>참가국</th><th>학번</th><th>연락처</th><th>개인정보동의</th><th>상태</th><th>신청일</th><th>관리</th></tr>
-      </thead>
-      <tbody id="applications-body"></tbody>
-    </table>
+    <!-- 일반 보기 -->
+    <div id="app-table-view">
+      <table>
+        <thead>
+          <tr><th>이름</th><th>성별</th><th>학과</th><th>학년</th><th>참가국</th><th>학번</th><th>연락처</th><th>개인정보동의</th><th>상태</th><th>신청일</th><th>관리</th></tr>
+        </thead>
+        <tbody id="applications-body"></tbody>
+      </table>
+    </div>
+    <!-- 학과별 보기 -->
+    <div id="app-dept-view" style="display:none;"></div>
     <p id="app-empty" style="font-size:13px;color:#aaa;text-align:center;padding:24px;display:none;">신청 내역이 없습니다.</p>
   </div>
 </div>
@@ -1486,8 +1492,10 @@ function renderApplications() {
   document.getElementById('app-list-count').textContent = filtered.length;
   const empty = document.getElementById('app-empty');
   const tbody = document.getElementById('applications-body');
-  if (filtered.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  if (filtered.length === 0) { tbody.innerHTML = ''; if (deptViewMode) document.getElementById('app-dept-view').innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
+
+  if (deptViewMode) { renderDeptView(filtered); return; }
 
   const statusLabel = { pending:'대기', approved:'승인', rejected:'거절' };
   const statusClass = { pending:'status-pending', approved:'status-approved', rejected:'status-rejected' };
@@ -1516,6 +1524,95 @@ function renderApplications() {
       </td>
     </tr>
   `}).join('');
+}
+
+let deptViewMode = false;
+
+function toggleDeptView() {
+  deptViewMode = !deptViewMode;
+  const btn = document.getElementById('dept-view-btn');
+  const tableView = document.getElementById('app-table-view');
+  const deptView = document.getElementById('app-dept-view');
+  if (deptViewMode) {
+    btn.textContent = '목록 보기';
+    tableView.style.display = 'none';
+    deptView.style.display = 'block';
+  } else {
+    btn.textContent = '학과별 보기';
+    tableView.style.display = 'block';
+    deptView.style.display = 'none';
+  }
+  renderApplications();
+}
+
+function renderDeptView(filtered) {
+  const deptView = document.getElementById('app-dept-view');
+  if (filtered.length === 0) { deptView.innerHTML = ''; return; }
+
+  const deptColors = {
+    '간호학과':'#3b82f6','치위생과':'#10b981','사회복지과':'#f59e0b',
+    '뷰티융합과':'#ec4899','의료AI융합과':'#8b5cf6','아동심리상담과':'#06b6d4','자유전공과':'#6b7280'
+  };
+  const statusLabel = { pending:'대기', approved:'승인', rejected:'거절' };
+  const statusClass = { pending:'status-pending', approved:'status-approved', rejected:'status-rejected' };
+
+  // 학과별 그룹핑
+  const grouped = {};
+  filtered.forEach(a => {
+    const d = a.dept || '미지정';
+    if (!grouped[d]) grouped[d] = [];
+    grouped[d].push(a);
+  });
+
+  // 학과명 정렬
+  const depts = Object.keys(grouped).sort();
+
+  deptView.innerHTML = depts.map(dept => {
+    const list = grouped[dept];
+    const color = deptColors[dept] || '#6b7280';
+    const rows = list.map(a => {
+      const realIdx = applications.indexOf(a);
+      const motiv = (a.motivation || '-').length > 40 ? (a.motivation.substring(0, 40) + '...') : (a.motivation || '-');
+      return `<tr>
+        <td>${a.name}</td>
+        <td>${a.gender || '-'}</td>
+        <td>${a.grade}</td>
+        <td>${a.country}</td>
+        <td>${a.studentId}</td>
+        <td>${a.phone}</td>
+        <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(a.motivation||'').replace(/"/g,'&quot;')}">${motiv}</td>
+        <td>${a.overseasExp || '-'}</td>
+        <td>${a.passport || '-'}</td>
+        <td><span class="status ${statusClass[a.status]}">${statusLabel[a.status]}</span></td>
+        <td>
+          <div class="btn-group">
+            <button class="btn btn-outline btn-sm" onclick="viewApplication(${realIdx})">상세</button>
+            ${a.status === 'pending' ? `
+              <button class="btn btn-success btn-sm" onclick="approveApplication(${realIdx})">승인</button>
+              <button class="btn btn-danger btn-sm" onclick="rejectApplication(${realIdx})">거절</button>
+            ` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    return `
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,${color}15,${color}08);padding:14px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:10px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:${color};display:inline-block;"></span>
+        <span style="font-size:15px;font-weight:700;color:#1e293b;">${dept}</span>
+        <span style="background:${color};color:#fff;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;">${list.length}명</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="margin:0;">
+          <thead>
+            <tr><th>이름</th><th>성별</th><th>학년</th><th>참가국</th><th>학번</th><th>연락처</th><th>지원동기</th><th>해외봉사경험</th><th>여권소지</th><th>상태</th><th>관리</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function filterApplications(status, el) {
