@@ -441,6 +441,7 @@ tr:hover td { background:#f8fafc; }
     </div>
     <div class="btn-group">
       <button class="btn btn-outline" onclick="printAllApplications()">전체 인쇄</button>
+      <button class="btn btn-outline" onclick="printByDept()">학과별 인쇄</button>
       <button class="btn btn-outline" onclick="exportApplicationsCSV()">CSV 내보내기</button>
     </div>
   </div>
@@ -1780,6 +1781,132 @@ function printAllApplications() {
   @media print { .page { padding:20px; } }
 </style>
 </head><body>${pages}</body></html>`);
+  win.document.close();
+  setTimeout(() => { win.print(); }, 500);
+}
+
+function printByDept() {
+  const filtered = appFilter === 'all' ? applications : applications.filter(a => a.status === appFilter);
+  if (filtered.length === 0) { alert('출력할 신청서가 없습니다.'); return; }
+
+  // 학과별 그룹핑
+  const grouped = {};
+  filtered.forEach(a => {
+    const d = a.dept || '미지정';
+    if (!grouped[d]) grouped[d] = [];
+    grouped[d].push(a);
+  });
+  const depts = Object.keys(grouped).sort();
+  const totalPages = filtered.length + depts.length; // 표지 + 신청서
+  if (!confirm(`${depts.length}개 학과, 총 ${filtered.length}명의 신청서를 학과별로 출력하시겠습니까?`)) return;
+
+  const statusLabel = { pending:'대기', approved:'승인', rejected:'거절' };
+  const deptColors = {
+    '간호학과':'#3b82f6','치위생과':'#10b981','사회복지과':'#f59e0b',
+    '뷰티융합과':'#ec4899','의료AI융합과':'#8b5cf6','아동심리상담과':'#06b6d4','자유전공과':'#6b7280'
+  };
+  const today = new Date().toLocaleDateString('ko-KR');
+  let pageNum = 0;
+
+  const allPages = depts.map(dept => {
+    const list = grouped[dept];
+    const color = deptColors[dept] || '#6b7280';
+    const pending = list.filter(a => a.status === 'pending').length;
+    const approved = list.filter(a => a.status === 'approved').length;
+    const rejected = list.filter(a => a.status === 'rejected').length;
+
+    // 학과 표지
+    pageNum++;
+    const coverPage = `
+    <div class="page page-break">
+      <div class="cover">
+        <div class="cover-badge" style="background:${color};">${dept}</div>
+        <div class="cover-count">${list.length}<span>명</span></div>
+        <div class="cover-stats">
+          <span class="cs-item" style="background:#fef3c7;color:#d97706;">대기 ${pending}명</span>
+          <span class="cs-item" style="background:#d1fae5;color:#059669;">승인 ${approved}명</span>
+          <span class="cs-item" style="background:#fef2f2;color:#ef4444;">거절 ${rejected}명</span>
+        </div>
+        <div class="cover-list">
+          <table class="info-table">
+            <thead><tr><th style="width:auto;">No</th><th style="width:auto;">성명</th><th style="width:auto;">학번</th><th style="width:auto;">참가국</th><th style="width:auto;">상태</th></tr></thead>
+            <tbody>${list.map((a, i) => `<tr>
+              <td style="text-align:center;">${i + 1}</td>
+              <td>${a.name}</td>
+              <td>${a.studentId}</td>
+              <td>${a.country || '-'}</td>
+              <td><span class="status-badge status-${a.status}">${statusLabel[a.status]}</span></td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+
+    // 각 학생 신청서
+    const studentPages = list.map(a => {
+      pageNum++;
+      return `
+      <div class="page page-break">
+        <div class="header">
+          <h1>2026 SHU 해외봉사단 참여 신청서</h1>
+          <p>삼육보건대학교 사회봉사단</p>
+          <span class="dept-tag" style="background:${color};">${dept}</span>
+        </div>
+        <div class="section-title">기본 정보</div>
+        <table class="info-table">
+          <tr><th>성명</th><td>${a.name}</td><th>성별</th><td>${a.gender || '-'}</td></tr>
+          <tr><th>학번</th><td>${a.studentId}</td><th>학과</th><td>${a.dept}</td></tr>
+          <tr><th>학년</th><td>${a.grade || '-'}</td><th>참가국</th><td>${a.country || '-'}</td></tr>
+          <tr><th>연락처</th><td>${a.phone}</td><th>이메일</th><td>${a.email || '-'}</td></tr>
+        </table>
+        <div class="section-title">신청 정보</div>
+        <table class="info-table">
+          <tr><th>해외봉사 경험</th><td>${a.overseasExp || '-'}</td><th>여권 소지</th><td>${a.passport || '-'}</td></tr>
+          <tr><th>개인정보 동의</th><td>${a.privacyAgreed || '-'}</td><th>신청 상태</th><td><span class="status-badge status-${a.status}">${statusLabel[a.status]}</span></td></tr>
+          <tr><th>신청일</th><td>${a.appliedAt}</td><th>처리일</th><td>${a.reviewedAt || '-'}</td></tr>
+        </table>
+        <div class="section-title">지원 동기</div>
+        <div class="motivation-box">${(a.motivation || '내용 없음').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+        <div class="footer">삼육보건대학교 사회봉사단 | ${dept} | 출력일: ${today}</div>
+      </div>`;
+    }).join('');
+
+    return coverPage + studentPages;
+  }).join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>학과별 신청서 출력 (${depts.length}개 학과, ${filtered.length}명)</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Malgun Gothic','맑은 고딕',sans-serif; color:#333; }
+  .page { padding:40px; position:relative; }
+  .page-break { page-break-after:always; }
+  .header { text-align:center; border-bottom:3px solid #1e40af; padding-bottom:20px; margin-bottom:30px; position:relative; }
+  .header h1 { font-size:22px; color:#1e40af; margin-bottom:4px; }
+  .header p { font-size:13px; color:#666; }
+  .dept-tag { position:absolute; top:0; right:0; color:#fff; padding:4px 14px; border-radius:12px; font-size:12px; font-weight:600; }
+  .info-table { width:100%; border-collapse:collapse; margin-bottom:24px; }
+  .info-table th, .info-table td { border:1px solid #d1d5db; padding:10px 14px; font-size:13px; text-align:left; }
+  .info-table th { background:#f1f5f9; font-weight:600; width:120px; color:#374151; }
+  .section-title { font-size:14px; font-weight:700; color:#1e40af; margin:20px 0 10px; padding-left:8px; border-left:3px solid #1e40af; }
+  .motivation-box { border:1px solid #d1d5db; border-radius:6px; padding:16px; font-size:13px; line-height:1.8; min-height:100px; white-space:pre-wrap; }
+  .footer { margin-top:40px; text-align:center; font-size:11px; color:#999; border-top:1px solid #e5e7eb; padding-top:16px; }
+  .status-badge { display:inline-block; padding:2px 12px; border-radius:10px; font-size:12px; font-weight:600; }
+  .status-pending { background:#fef3c7; color:#d97706; }
+  .status-approved { background:#d1fae5; color:#059669; }
+  .status-rejected { background:#fef2f2; color:#ef4444; }
+  .cover { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:80vh; }
+  .cover-badge { color:#fff; padding:10px 36px; border-radius:16px; font-size:24px; font-weight:700; margin-bottom:24px; }
+  .cover-count { font-size:64px; font-weight:800; color:#1e293b; margin-bottom:16px; }
+  .cover-count span { font-size:24px; font-weight:400; color:#64748b; }
+  .cover-stats { display:flex; gap:12px; margin-bottom:32px; }
+  .cs-item { padding:6px 16px; border-radius:12px; font-size:13px; font-weight:600; }
+  .cover-list { width:100%; max-width:500px; }
+  .cover-list .info-table th { width:auto; text-align:center; }
+  @media print { .page { padding:20px; } }
+</style>
+</head><body>${allPages}</body></html>`);
   win.document.close();
   setTimeout(() => { win.print(); }, 500);
 }
