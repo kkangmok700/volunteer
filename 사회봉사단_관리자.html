@@ -1650,9 +1650,11 @@ function viewApplication(idx) {
       <div style="background:#f8fafc;border-radius:8px;padding:14px;font-size:13px;color:#555;line-height:1.7;">${(a.motivation || '').replace(/\n/g,'<br>')}</div>
     </div>
   `;
-  let actions = '<button class="btn btn-outline" onclick="closeApplicationModal()">닫기</button>';
+  let actions = `<button class="btn btn-outline" onclick="printApplication(${idx})">인쇄</button>
+    <button class="btn btn-outline" onclick="closeApplicationModal()">닫기</button>`;
   if (a.status === 'pending') {
     actions = `
+      <button class="btn btn-outline" onclick="printApplication(${idx})">인쇄</button>
       <button class="btn btn-danger" onclick="rejectApplication(${idx});closeApplicationModal()">거절</button>
       <button class="btn btn-success" onclick="approveApplication(${idx});closeApplicationModal()">승인</button>
       <button class="btn btn-outline" onclick="closeApplicationModal()">닫기</button>
@@ -1662,6 +1664,62 @@ function viewApplication(idx) {
   document.getElementById('modal-application').classList.add('open');
 }
 function closeApplicationModal() { document.getElementById('modal-application').classList.remove('open'); }
+
+function printApplication(idx) {
+  const a = applications[idx];
+  const statusLabel = { pending:'대기', approved:'승인', rejected:'거절' };
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>신청서 - ${a.name}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Malgun Gothic','맑은 고딕',sans-serif; padding:40px; color:#333; }
+  .header { text-align:center; border-bottom:3px solid #1e40af; padding-bottom:20px; margin-bottom:30px; }
+  .header h1 { font-size:22px; color:#1e40af; margin-bottom:4px; }
+  .header p { font-size:13px; color:#666; }
+  .info-table { width:100%; border-collapse:collapse; margin-bottom:24px; }
+  .info-table th, .info-table td { border:1px solid #d1d5db; padding:10px 14px; font-size:13px; text-align:left; }
+  .info-table th { background:#f1f5f9; font-weight:600; width:120px; color:#374151; }
+  .section-title { font-size:14px; font-weight:700; color:#1e40af; margin:20px 0 10px; padding-left:8px; border-left:3px solid #1e40af; }
+  .motivation-box { border:1px solid #d1d5db; border-radius:6px; padding:16px; font-size:13px; line-height:1.8; min-height:100px; white-space:pre-wrap; }
+  .footer { margin-top:40px; text-align:center; font-size:11px; color:#999; border-top:1px solid #e5e7eb; padding-top:16px; }
+  .status-badge { display:inline-block; padding:2px 12px; border-radius:10px; font-size:12px; font-weight:600; }
+  .status-pending { background:#fef3c7; color:#d97706; }
+  .status-approved { background:#d1fae5; color:#059669; }
+  .status-rejected { background:#fef2f2; color:#ef4444; }
+  @media print { body { padding:20px; } }
+</style>
+</head><body>
+  <div class="header">
+    <h1>2026 SHU 해외봉사단 참여 신청서</h1>
+    <p>삼육보건대학교 사회봉사단</p>
+  </div>
+
+  <div class="section-title">기본 정보</div>
+  <table class="info-table">
+    <tr><th>성명</th><td>${a.name}</td><th>성별</th><td>${a.gender || '-'}</td></tr>
+    <tr><th>학번</th><td>${a.studentId}</td><th>학과</th><td>${a.dept}</td></tr>
+    <tr><th>학년</th><td>${a.grade || '-'}</td><th>참가국</th><td>${a.country || '-'}</td></tr>
+    <tr><th>연락처</th><td>${a.phone}</td><th>이메일</th><td>${a.email || '-'}</td></tr>
+  </table>
+
+  <div class="section-title">신청 정보</div>
+  <table class="info-table">
+    <tr><th>해외봉사 경험</th><td>${a.overseasExp || '-'}</td><th>여권 소지</th><td>${a.passport || '-'}</td></tr>
+    <tr><th>개인정보 동의</th><td>${a.privacyAgreed || '-'}</td><th>신청 상태</th><td><span class="status-badge status-${a.status}">${statusLabel[a.status]}</span></td></tr>
+    <tr><th>신청일</th><td>${a.appliedAt}</td><th>처리일</th><td>${a.reviewedAt || '-'}</td></tr>
+  </table>
+
+  <div class="section-title">지원 동기</div>
+  <div class="motivation-box">${(a.motivation || '내용 없음').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+
+  <div class="footer">
+    삼육보건대학교 사회봉사단 | 출력일: ${new Date().toLocaleDateString('ko-KR')}
+  </div>
+</body></html>`);
+  win.document.close();
+  setTimeout(() => { win.print(); }, 300);
+}
 
 async function approveApplication(idx) {
   const a = applications[idx];
