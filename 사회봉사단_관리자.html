@@ -1478,9 +1478,9 @@ function renderApplications() {
   document.getElementById('app-stat-rejected').textContent = rejected;
 
   // Country stats
-  const countries = ['라오스','대만','인도네시아','베트남'];
-  const countryColors = {'라오스':'#10b981','대만':'#3b82f6','인도네시아':'#f59e0b','베트남':'#8b5cf6'};
-  const countryFlags = {'라오스':'🇱🇦','대만':'🇹🇼','인도네시아':'🇮🇩','베트남':'🇻🇳'};
+  const countries = ['인도','네팔'];
+  const countryColors = {'인도':'#f59e0b','네팔':'#3b82f6'};
+  const countryFlags = {'인도':'🇮🇳','네팔':'🇳🇵'};
   const cGrid = document.getElementById('country-stats-grid');
   if (cGrid) {
     cGrid.innerHTML = countries.map(c => {
