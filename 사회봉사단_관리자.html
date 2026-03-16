@@ -518,6 +518,7 @@ tr:hover td { background:#f8fafc; }
         <button class="btn btn-sm btn-primary" id="dept-view-btn" onclick="toggleDeptView()" style="margin-left:8px;">학과별 보기</button>
         <button class="btn btn-sm btn-outline" onclick="printAllApplications()" style="margin-left:4px;">전체 인쇄</button>
         <button class="btn btn-sm btn-outline" onclick="printByDept()" style="margin-left:4px;">학과별 인쇄</button>
+        <button class="btn btn-sm btn-outline" id="toggle-old-country-btn" onclick="toggleOldCountry()" style="margin-left:8px;">기존 국가 보기</button>
       </div>
     </div>
     <!-- 일반 보기 -->
@@ -1467,6 +1468,17 @@ async function deleteAnnounce(idx) {
 }
 
 // ============ APPLICATIONS ============
+const newCountries = ['인도','네팔'];
+let hideOldCountry = true; // 기본: 기존 국가 숨김
+
+function toggleOldCountry() {
+  hideOldCountry = !hideOldCountry;
+  const btn = document.getElementById('toggle-old-country-btn');
+  btn.textContent = hideOldCountry ? '기존 국가 보기' : '기존 국가 감추기';
+  btn.className = hideOldCountry ? 'btn btn-sm btn-outline' : 'btn btn-sm btn-primary';
+  renderApplications();
+}
+
 function renderApplications() {
   const total = applications.length;
   const pending = applications.filter(a => a.status === 'pending').length;
@@ -1504,7 +1516,8 @@ function renderApplications() {
     }).join('');
   }
 
-  const filtered = appFilter === 'all' ? applications : applications.filter(a => a.status === appFilter);
+  let baseApps = hideOldCountry ? applications.filter(a => newCountries.includes(a.country)) : applications;
+  const filtered = appFilter === 'all' ? baseApps : baseApps.filter(a => a.status === appFilter);
   document.getElementById('app-list-count').textContent = filtered.length;
   const empty = document.getElementById('app-empty');
   const tbody = document.getElementById('applications-body');
@@ -1794,7 +1807,8 @@ function printApplication(idx) {
 }
 
 function printAllApplications() {
-  const filtered = appFilter === 'all' ? applications : applications.filter(a => a.status === appFilter);
+  let printBase = hideOldCountry ? applications.filter(a => newCountries.includes(a.country)) : applications;
+  const filtered = appFilter === 'all' ? printBase : printBase.filter(a => a.status === appFilter);
   if (filtered.length === 0) { alert('출력할 신청서가 없습니다.'); return; }
   if (!confirm(`총 ${filtered.length}명의 신청서를 일괄 출력하시겠습니까?`)) return;
 
@@ -1856,7 +1870,8 @@ function printAllApplications() {
 }
 
 function printByDept() {
-  const filtered = appFilter === 'all' ? applications : applications.filter(a => a.status === appFilter);
+  let printBase = hideOldCountry ? applications.filter(a => newCountries.includes(a.country)) : applications;
+  const filtered = appFilter === 'all' ? printBase : printBase.filter(a => a.status === appFilter);
   if (filtered.length === 0) { alert('출력할 신청서가 없습니다.'); return; }
 
   // 학과별 그룹핑
