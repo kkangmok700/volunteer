@@ -522,7 +522,12 @@ tr:hover td { background:#f8fafc; }
   <div class="panel" id="old-country-detail-panel" style="display:none;border:2px solid #f59e0b;">
     <div class="panel-header">
       <span class="panel-title">📋 마감 국가 신청자 분류 (인도/네팔)</span>
-      <button class="btn btn-sm btn-outline" onclick="toggleOldCountryDetail()" id="old-detail-close-btn">닫기 ✕</button>
+      <div class="btn-group">
+        <button class="btn btn-sm btn-outline" onclick="printOldCountryDetail('all')">전체 인쇄</button>
+        <button class="btn btn-sm btn-outline" onclick="printOldCountryDetail('인도')">🇮🇳 인도 인쇄</button>
+        <button class="btn btn-sm btn-outline" onclick="printOldCountryDetail('네팔')">🇳🇵 네팔 인쇄</button>
+        <button class="btn btn-sm btn-outline" onclick="toggleOldCountryDetail()" id="old-detail-close-btn">닫기 ✕</button>
+      </div>
     </div>
     <div id="old-country-detail-content"></div>
   </div>
@@ -1581,6 +1586,73 @@ function renderOldCountryDetail() {
     html += '</div>';
   });
   container.innerHTML = html;
+}
+
+function printOldCountryDetail(targetCountry) {
+  const statusLabel = {pending:'대기',approved:'승인',rejected:'거절'};
+  const statusColor = {pending:'#d97706',approved:'#059669',rejected:'#ef4444'};
+  const countryFlags = {'인도':'🇮🇳','네팔':'🇳🇵'};
+  const printCountries = targetCountry === 'all' ? oldCountries : [targetCountry];
+  const oldApps = applications.filter(a => printCountries.includes(a.country));
+  if (oldApps.length === 0) { alert('출력할 신청자가 없습니다.'); return; }
+  const title = targetCountry === 'all' ? '인도/네팔 신청자 분류표' : targetCountry + ' 신청자 분류표';
+  if (!confirm(title + ' (' + oldApps.length + '명)을 인쇄하시겠습니까?')) return;
+
+  let html = '';
+  printCountries.forEach(country => {
+    const cApps = applications.filter(a => a.country === country);
+    if (cApps.length === 0) return;
+    const deptMap = {};
+    cApps.forEach(a => { const d = a.dept || '미지정'; if (!deptMap[d]) deptMap[d] = []; deptMap[d].push(a); });
+    const depts = Object.keys(deptMap).sort();
+
+    html += '<div style="page-break-after:always;padding:20px;">';
+    html += '<h1 style="text-align:center;font-size:20px;margin-bottom:4px;">' + (countryFlags[country]||'') + ' ' + country + ' 신청자 분류표</h1>';
+    html += '<p style="text-align:center;font-size:12px;color:#888;margin-bottom:20px;">2026 SHU 해외봉사단 | 총 ' + cApps.length + '명 | 출력일: ' + new Date().toLocaleDateString('ko-KR') + '</p>';
+
+    // 요약 테이블
+    html += '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px;">';
+    html += '<thead><tr style="background:#f1f5f9;"><th style="border:1px solid #ddd;padding:8px;">학과</th><th style="border:1px solid #ddd;padding:8px;">인원</th><th style="border:1px solid #ddd;padding:8px;">대기</th><th style="border:1px solid #ddd;padding:8px;">승인</th><th style="border:1px solid #ddd;padding:8px;">거절</th></tr></thead><tbody>';
+    depts.forEach(d => {
+      const da = deptMap[d];
+      html += '<tr><td style="border:1px solid #ddd;padding:6px 8px;font-weight:600;">' + d + '</td>';
+      html += '<td style="border:1px solid #ddd;padding:6px 8px;text-align:center;">' + da.length + '</td>';
+      html += '<td style="border:1px solid #ddd;padding:6px 8px;text-align:center;">' + da.filter(a=>a.status==='pending').length + '</td>';
+      html += '<td style="border:1px solid #ddd;padding:6px 8px;text-align:center;">' + da.filter(a=>a.status==='approved').length + '</td>';
+      html += '<td style="border:1px solid #ddd;padding:6px 8px;text-align:center;">' + da.filter(a=>a.status==='rejected').length + '</td></tr>';
+    });
+    html += '<tr style="background:#f1f5f9;font-weight:700;"><td style="border:1px solid #ddd;padding:6px 8px;">합계</td>';
+    html += '<td style="border:1px solid #ddd;padding:6px 8px;text-align:center;">' + cApps.length + '</td>';
+    html += '<td style="border:1px solid #ddd;padding:6px 8px;text-align:center;">' + cApps.filter(a=>a.status==='pending').length + '</td>';
+    html += '<td style="border:1px solid #ddd;padding:6px 8px;text-align:center;">' + cApps.filter(a=>a.status==='approved').length + '</td>';
+    html += '<td style="border:1px solid #ddd;padding:6px 8px;text-align:center;">' + cApps.filter(a=>a.status==='rejected').length + '</td></tr>';
+    html += '</tbody></table>';
+
+    // 학과별 상세
+    depts.forEach(d => {
+      const da = deptMap[d];
+      html += '<h3 style="font-size:14px;margin:16px 0 8px;padding-bottom:4px;border-bottom:2px solid #333;">🏫 ' + d + ' (' + da.length + '명)</h3>';
+      html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+      html += '<thead><tr style="background:#f1f5f9;"><th style="border:1px solid #ddd;padding:6px;">No</th><th style="border:1px solid #ddd;padding:6px;">이름</th><th style="border:1px solid #ddd;padding:6px;">성별</th><th style="border:1px solid #ddd;padding:6px;">학년</th><th style="border:1px solid #ddd;padding:6px;">학번</th><th style="border:1px solid #ddd;padding:6px;">연락처</th><th style="border:1px solid #ddd;padding:6px;">상태</th></tr></thead><tbody>';
+      da.forEach((a, i) => {
+        const sc = statusColor[a.status] || '#888';
+        html += '<tr><td style="border:1px solid #ddd;padding:5px 6px;text-align:center;">' + (i+1) + '</td>';
+        html += '<td style="border:1px solid #ddd;padding:5px 6px;">' + a.name + '</td>';
+        html += '<td style="border:1px solid #ddd;padding:5px 6px;text-align:center;">' + (a.gender||'-') + '</td>';
+        html += '<td style="border:1px solid #ddd;padding:5px 6px;text-align:center;">' + (a.grade||'-') + '</td>';
+        html += '<td style="border:1px solid #ddd;padding:5px 6px;">' + (a.studentId||'-') + '</td>';
+        html += '<td style="border:1px solid #ddd;padding:5px 6px;">' + (a.phone||'-') + '</td>';
+        html += '<td style="border:1px solid #ddd;padding:5px 6px;text-align:center;color:' + sc + ';font-weight:600;">' + (statusLabel[a.status]||a.status) + '</td></tr>';
+      });
+      html += '</tbody></table>';
+    });
+    html += '</div>';
+  });
+
+  const w = window.open('', '_blank');
+  w.document.write('<html><head><meta charset="UTF-8"><title>' + title + '</title><style>@media print{body{margin:0;padding:0;}}</style></head><body style="font-family:\'Noto Sans KR\',sans-serif;">' + html + '</body></html>');
+  w.document.close();
+  w.print();
 }
 
 function renderApplications() {
