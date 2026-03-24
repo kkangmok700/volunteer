@@ -2349,12 +2349,12 @@ function generateQRCode() {
   const currentPath = window.location.pathname;
   const dir = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
   const appUrl = window.location.origin + dir + encodeURIComponent('사회봉사단_신청서.html');
-  document.getElementById('share-url').value = appUrl;
+  document.getElementById('share-url').value = decodeURIComponent(appUrl);
   const qrImg = new Image();
-  qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=' + encodeURIComponent(appUrl);
+  qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(appUrl);
   qrImg.alt = 'QR코드';
-  qrImg.style.width = '140px';
-  qrImg.style.height = '140px';
+  qrImg.style.width = '200px';
+  qrImg.style.height = '200px';
   container.innerHTML = '';
   container.appendChild(qrImg);
 }
