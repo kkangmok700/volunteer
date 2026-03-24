@@ -523,9 +523,10 @@ tr:hover td { background:#f8fafc; }
     <div class="panel-header">
       <span class="panel-title">📋 마감 국가 신청자 분류 (인도/네팔)</span>
       <div class="btn-group">
-        <button class="btn btn-sm btn-outline" onclick="printOldCountryDetail('all')">전체 인쇄</button>
-        <button class="btn btn-sm btn-outline" onclick="printOldCountryDetail('인도')">🇮🇳 인도 인쇄</button>
-        <button class="btn btn-sm btn-outline" onclick="printOldCountryDetail('네팔')">🇳🇵 네팔 인쇄</button>
+        <button class="btn btn-sm btn-outline" onclick="printOldCountryDetail('all')">분류표 인쇄</button>
+        <button class="btn btn-sm btn-outline" onclick="printOldCountryApps('all')">📄 전체 신청서</button>
+        <button class="btn btn-sm btn-outline" onclick="printOldCountryApps('인도')">🇮🇳 인도 신청서</button>
+        <button class="btn btn-sm btn-outline" onclick="printOldCountryApps('네팔')">🇳🇵 네팔 신청서</button>
         <button class="btn btn-sm btn-outline" onclick="toggleOldCountryDetail()" id="old-detail-close-btn">닫기 ✕</button>
       </div>
     </div>
@@ -1653,6 +1654,50 @@ function printOldCountryDetail(targetCountry) {
   w.document.write('<html><head><meta charset="UTF-8"><title>' + title + '</title><style>@media print{body{margin:0;padding:0;}}</style></head><body style="font-family:\'Noto Sans KR\',sans-serif;">' + html + '</body></html>');
   w.document.close();
   w.print();
+}
+
+function printOldCountryApps(targetCountry) {
+  const statusLabel = {pending:'대기',approved:'승인',rejected:'거절'};
+  const countryFlags = {'인도':'🇮🇳','네팔':'🇳🇵'};
+  const printCountries = targetCountry === 'all' ? oldCountries : [targetCountry];
+  const apps = applications.filter(a => printCountries.includes(a.country));
+  if (apps.length === 0) { alert('출력할 신청자가 없습니다.'); return; }
+  const title = targetCountry === 'all' ? '인도/네팔 개인 신청서' : targetCountry + ' 개인 신청서';
+  if (!confirm(title + ' (' + apps.length + '명)을 인쇄하시겠습니까?')) return;
+
+  let pages = '';
+  apps.forEach(a => {
+    pages += `
+    <div style="page-break-after:always;padding:40px;">
+      <div style="text-align:center;border-bottom:3px solid #1e40af;padding-bottom:20px;margin-bottom:30px;">
+        <h1 style="font-size:22px;color:#1e40af;margin:0 0 4px;">2026 SHU 해외봉사단 참여 신청서</h1>
+        <p style="font-size:13px;color:#666;margin:0;">삼육보건대학교 사회봉사단 ${countryFlags[a.country]||''} ${a.country}</p>
+      </div>
+      <div style="font-size:14px;font-weight:700;color:#1e40af;margin:20px 0 10px;padding-left:8px;border-left:3px solid #1e40af;">기본 정보</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+        <tr><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;width:120px;">성명</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${a.name}</td><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;width:120px;">성별</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${a.gender||'-'}</td></tr>
+        <tr><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;">학번</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${a.studentId}</td><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;">학과</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${a.dept}</td></tr>
+        <tr><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;">학년</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${a.grade||'-'}</td><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;">참가국</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${a.country||'-'}</td></tr>
+        <tr><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;">연락처</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${a.phone}</td><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;">이메일</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${a.email||'-'}</td></tr>
+      </table>
+      <div style="font-size:14px;font-weight:700;color:#1e40af;margin:20px 0 10px;padding-left:8px;border-left:3px solid #1e40af;">신청 정보</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+        <tr><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;width:120px;">해외봉사 경험</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${a.overseasExp||'-'}</td><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;width:120px;">여권 소지</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${a.passport||'-'}</td></tr>
+        <tr><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;">개인정보 동의</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${a.privacyAgreed||'-'}</td><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;">신청 상태</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${statusLabel[a.status]||a.status}</td></tr>
+        <tr><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;">신청일</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${a.appliedAt}</td><th style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;background:#f1f5f9;font-weight:600;">처리일</th><td style="border:1px solid #d1d5db;padding:10px 14px;font-size:13px;">${a.reviewedAt||'-'}</td></tr>
+      </table>
+      <div style="font-size:14px;font-weight:700;color:#1e40af;margin:20px 0 10px;padding-left:8px;border-left:3px solid #1e40af;">지원 동기</div>
+      <div style="border:1px solid #d1d5db;border-radius:6px;padding:16px;font-size:13px;line-height:1.8;min-height:100px;white-space:pre-wrap;">${(a.motivation||'내용 없음').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      <div style="margin-top:40px;text-align:center;font-size:11px;color:#999;border-top:1px solid #e5e7eb;padding-top:16px;">
+        삼육보건대학교 사회봉사단 | 출력일: ${new Date().toLocaleDateString('ko-KR')}
+      </div>
+    </div>`;
+  });
+
+  const w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + '</title><style>@media print{body{margin:0;padding:0;}}</style></head><body style="font-family:\'Malgun Gothic\',sans-serif;">' + pages + '</body></html>');
+  w.document.close();
+  setTimeout(() => { w.print(); }, 300);
 }
 
 function renderApplications() {
