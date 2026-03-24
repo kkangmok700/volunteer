@@ -2465,8 +2465,8 @@ function generateQRCode() {
   if (!container) return;
   const currentPath = window.location.pathname;
   const dir = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
-  const appUrl = 'https://kkangmok700.github.io/volunteer/%EC%82%AC%ED%9A%8C%EB%B4%89%EC%82%AC%EB%8B%A8_%EC%8B%A0%EC%B2%AD%EC%84%9C.html';
-  document.getElementById('share-url').value = 'https://kkangmok700.github.io/volunteer/사회봉사단_신청서.html';
+  const appUrl = 'https://kkangmok700.github.io/volunteer/사회봉사단_신청서.html';
+  document.getElementById('share-url').value = appUrl;
   const qrImg = new Image();
   qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(appUrl);
   qrImg.alt = 'QR코드';
