@@ -2465,7 +2465,7 @@ function generateQRCode() {
   if (!container) return;
   const currentPath = window.location.pathname;
   const dir = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
-  const appUrl = window.location.origin + dir + encodeURIComponent('사회봉사단_신청서.html');
+  const appUrl = window.location.origin + dir + encodeURIComponent('사회봉사단_신청서.html') + '?v=' + Date.now();
   document.getElementById('share-url').value = decodeURIComponent(appUrl);
   const qrImg = new Image();
   qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(appUrl);
